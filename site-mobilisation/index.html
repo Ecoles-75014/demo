@@ -48,6 +48,11 @@
   .action{display:grid;grid-template-columns:86px 1fr auto;gap:14px;align-items:start}
   .action.cancelled{opacity:.6}
   .action.cancelled h3{text-decoration:line-through}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:12px 0 14px}
+  .tabs a{padding:7px 12px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs a.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .t-past{background:var(--line);color:var(--muted)}
+  .note-past{background:var(--info-soft);color:var(--info);border-radius:8px;padding:8px 10px;font-size:.9rem;margin:10px 0}
   .date{background:var(--bg);border:1px solid var(--line);border-radius:10px;text-align:center;padding:6px 4px;line-height:1.15}
   .date b{display:block;font-size:1.5rem} .date span{font-size:.8rem;color:var(--muted);text-transform:uppercase}
   .action h3{margin:0 0 2px;font-size:1.08rem}
@@ -175,9 +180,12 @@ let actions=[
   {id:2,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Tournée d'affichage avenue des Tilleuls",place:"Commerces de l'avenue des Tilleuls",sector:"Nord",date:addDays(3),start:"17:00",end:"19:00",needed:3,desc:"20 affiches A3 et du scotch fournis.",status:"open"},
   {id:3,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Présence au groupe de travail",title:"Réunion de concertation du secteur Sud",place:"Préau de l'école du Moulin",sector:"Sud",date:addDays(5),start:"18:30",end:"",needed:null,desc:"Venir nombreux. Participer n'engage pas à endosser les résultats.",status:"open"},
   {id:4,by:4,name:"Sofia",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant la mairie",place:"Place de la mairie",sector:"",date:addDays(9),start:"",end:"",needed:null,desc:"Horaire à confirmer.",status:"open"},
-  {id:5,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Tractage",title:"Tractage au marché du samedi",place:"Marché de la place du Parc",sector:"Nord",date:addDays(4),start:"10:00",end:"12:00",needed:3,desc:"",status:"cancelled",cancelMsg:"Reporté à cause de la pluie annoncée."}
+  {id:5,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Tractage",title:"Tractage au marché du samedi",place:"Marché de la place du Parc",sector:"Nord",date:addDays(4),start:"10:00",end:"12:00",needed:3,desc:"",status:"cancelled",cancelMsg:"Reporté à cause de la pluie annoncée."},
+  {id:6,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à la sortie de l'école du Moulin",place:"Devant l'école du Moulin",sector:"Sud",date:addDays(-3),start:"16:30",end:"17:00",needed:4,desc:"",status:"open"},
+  {id:7,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Affichage dans les commerces du quartier Nord",place:"Rue du Parc",sector:"Nord",date:addDays(-6),start:"18:00",end:"19:30",needed:3,desc:"",status:"open"},
+  {id:8,by:4,name:"Sofia",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant le rectorat",place:"Parvis du rectorat",sector:"",date:addDays(-10),start:"12:00",end:"",needed:null,desc:"",status:"cancelled",cancelMsg:"Remplacé par une délégation reçue en audience."}
 ];
-let avail=[{a:1,u:3,c:"Je peux apporter 50 tracts de plus."},{a:1,u:5},{a:2,u:4},{a:3,u:3},{a:3,u:4},{a:3,u:5},{a:5,u:4}];
+let avail=[{a:1,u:3,c:"Je peux apporter 50 tracts de plus."},{a:1,u:5},{a:2,u:4},{a:3,u:3},{a:3,u:4},{a:3,u:5},{a:5,u:4},{a:6,u:1},{a:6,u:3},{a:6,u:5},{a:7,u:3},{a:7,u:4}];
 let mails=[];
 
 // ---------- état ----------
@@ -285,6 +293,7 @@ V.welcome=()=>`<div class="login card" style="text-align:left">
 
 // ---------- actions ----------
 function count(a){return avail.filter(x=>x.a===a.id).length;}
+const isPast=a=>a.date<addDays(0);
 function myComment(a){return (avail.find(x=>x.a===a.id&&x.u===me.id)||{}).c||"";}
 function amIn(a){return avail.some(x=>x.a===a.id&&x.u===me.id);}
 function toggleBtn(a,long){
@@ -292,7 +301,7 @@ function toggleBtn(a,long){
   return amIn(a)?`<button class="ok" data-act="toggle" data-a="${a.id}">✓ Je suis disponible${long?" – me retirer":""}</button>`:`<button class="primary" data-act="toggle" data-a="${a.id}">Je suis disponible</button>`;
 }
 function actionCard(a){
-  const n=count(a), x=d(a.date), fill=a.needed?Math.min(100,Math.round(n/a.needed*100)):0;
+  const n=count(a), x=d(a.date), fill=a.needed?Math.min(100,Math.round(n/a.needed*100)):0, past=isPast(a);
   return `<div class="card action ${a.status==="cancelled"?"cancelled":""}">
     <div class="date"><span>${JOURS[x.getDay()].slice(0,3)}.</span><b>${x.getDate()}</b><span>${MOIS[x.getMonth()]}</span></div>
     <div><div class="row" style="gap:6px;margin-bottom:4px"><span class="tag t-type">${esc(a.type)}</span>${secTag(a.sector)||'<span class="tag t-type">Tous secteurs</span>'}</div>
@@ -300,13 +309,26 @@ function actionCard(a){
       <div class="meta">${esc(horaire(a))} · ${esc(a.place)}</div>
       <div class="meta">Responsable&nbsp;: ${esc(a.name)}</div>
       ${a.status==="cancelled"&&a.cancelMsg?`<div class="meta small">Annulée&nbsp;: ${esc(a.cancelMsg)}</div>`:""}</div>
-    <div class="side">${toggleBtn(a)}
-      ${a.status!=="cancelled"?`<div class="count">${n} disponible${n>1?"s":""}${a.needed?` sur ${a.needed} souhaités`:""}</div>${a.needed?`<div class="bar-fill"><i style="width:${fill}%"></i></div>`:""}`:""}
+    <div class="side">${past?(a.status==="cancelled"?`<span class="tag t-alert">Annulée</span>`:`<div class="count">${n} participant${n>1?"s":""}${amIn(a)?" dont vous":""}</div>`):toggleBtn(a)}
+      ${a.status!=="cancelled"&&!past?`<div class="count">${n} disponible${n>1?"s":""}${a.needed?` sur ${a.needed} souhaités`:""}</div>${a.needed?`<div class="bar-fill"><i style="width:${fill}%"></i></div>`:""}`:""}
     </div></div>`;
 }
+const tabs=on=>`<div class="tabs"><a href="#" data-go="list" class="${on==="list"?"on":""}">À venir</a><a href="#" data-go="past" class="${on==="past"?"on":""}">Passées</a></div>`;
+const filtersHtml=()=>`<div class="filters">
+    <label class="small">Secteur&nbsp;: <select id="fs"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===fSector?"selected":""}>${s}</option>`).join("")}</select></label>
+    <label class="small">Type&nbsp;: <select id="ft"><option value="">Tous</option>${TYPES.map(s=>`<option ${s===fType?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
+  </div>`;
+const filtered=()=>actions.filter(a=>(!fSector||a.sector===fSector||!a.sector)&&(!fType||a.type===fType));
+V.past=()=>{
+  const rows=filtered().filter(isPast).sort((a,b)=>(b.date+(b.start||"")).localeCompare(a.date+(a.start||"")));
+  const tenues=rows.filter(a=>a.status!=="cancelled"), part=tenues.reduce((t,a)=>t+count(a),0);
+  return `<div class="row"><h1>Actions passées</h1><span class="spacer"></span><button class="primary" data-go="new">Proposer une action</button></div>${tabs("past")}${filtersHtml()}
+  ${rows.length?`<p class="note-past">${tenues.length}${NB}action${tenues.length>1?"s":""} menée${tenues.length>1?"s":""}, ${part}${NB}participation${part>1?"s":""} (actions annulées non comptées).</p>`+rows.map(actionCard).join(""):`<p class="muted">Aucune action passée ne correspond à ces filtres.</p>`}
+  <p class="small muted">Les actions passées sont conservées 90${NB}jours, puis supprimées avec la liste des participants.</p>`;
+};
 V.list=()=>{
-  const rows=actions.filter(a=>(!fSector||a.sector===fSector||!a.sector)&&(!fType||a.type===fType)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||"")));
-  return `<div class="row"><h1>Actions à venir</h1><span class="spacer"></span><button class="primary" data-go="new">Proposer une action</button></div>
+  const rows=filtered().filter(a=>!isPast(a)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||"")));
+  return `<div class="row"><h1>Actions à venir</h1><span class="spacer"></span><button class="primary" data-go="new">Proposer une action</button></div>${tabs("list")}
   <div class="filters">
     <label class="small">Secteur&nbsp;: <select id="fs"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===fSector?"selected":""}>${s}</option>`).join("")}</select></label>
     <label class="small">Type&nbsp;: <select id="ft"><option value="">Tous</option>${TYPES.map(s=>`<option ${s===fType?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
@@ -327,13 +349,14 @@ function icsOf(a){
 V.detail=()=>{
   const a=actions.find(x=>x.id===param); if(!a) return `<p>Action introuvable.</p>`;
   const people=avail.filter(x=>x.a===a.id).map(x=>userById(x.u)).filter(Boolean);
-  const canEdit=isMod()||a.by===me.id, open=a.status!=="cancelled";
-  return `<p><a href="#" data-go="list">← Toutes les actions</a></p>
-  <div class="card"><div class="row" style="gap:6px"><span class="tag t-type">${esc(a.type)}</span>${secTag(a.sector)||'<span class="tag t-type">Tous secteurs</span>'}${open?"":'<span class="tag t-alert">Annulée</span>'}</div>
-    <h1 style="margin-top:6px;${open?"":"text-decoration:line-through"}">${esc(a.title)}</h1>
+  const past=isPast(a), canEdit=(isMod()||a.by===me.id)&&!past, open=a.status!=="cancelled"&&!past, cancelled=a.status==="cancelled";
+  return `<p><a href="#" data-go="${past?"past":"list"}">← ${past?"Actions passées":"Toutes les actions"}</a></p>
+  <div class="card"><div class="row" style="gap:6px"><span class="tag t-type">${esc(a.type)}</span>${secTag(a.sector)||'<span class="tag t-type">Tous secteurs</span>'}${cancelled?'<span class="tag t-alert">Annulée</span>':""}${past&&!cancelled?'<span class="tag t-past">Terminée</span>':""}</div>
+    <h1 style="margin-top:6px;${cancelled?"text-decoration:line-through":""}">${esc(a.title)}</h1>
     <p><strong>${esc(longDate(a.date))}</strong> · ${esc(horaire(a))}<br>${esc(a.place)}</p>
     ${a.desc?`<p>${esc(a.desc)}</p>`:""}
-    ${!open&&a.cancelMsg?`<div class="alert">Message du responsable&nbsp;: ${esc(a.cancelMsg)}</div>`:""}
+    ${past?`<div class="note-past">Cette action ${cancelled?"était prévue":"a eu lieu"} le ${esc(longDate(a.date))}. Les inscriptions sont closes.</div>`:""}
+    ${cancelled&&a.cancelMsg?`<div class="alert">Message du responsable&nbsp;: ${esc(a.cancelMsg)}</div>`:""}
     <h2>Responsable</h2>
     <p>${esc(a.name)}${a.consent&&a.phone?` – <a href="tel:${esc(a.phone.replace(/\s/g,""))}">${esc(a.phone)}</a>`:` <span class="muted small">(numéro non affiché, contacter via le groupe WhatsApp du secteur)</span>`}</p>
     ${open?`<div class="share">
@@ -359,7 +382,7 @@ V.detail=()=>{
       <div class="row" style="margin-top:10px"><button class="primary" type="submit">Transférer</button></div></form></details>`:""}
     <div id="cancelbox"></div>
   </div>
-  <div class="card"><h2>Disponibles (${people.length}${a.needed?` sur ${a.needed} souhaités`:""})</h2>
+  <div class="card"><h2>${past?"Participants":"Disponibles"} (${people.length}${a.needed?` sur ${a.needed} souhaités`:""})</h2>
     ${people.length?`<ul class="people">${people.map(u=>{const c=(avail.find(x=>x.a===a.id&&x.u===u.id)||{}).c;return `<li>${esc(u.name)}${(a.by===me.id||isMod())&&u.phone?` <span class="muted small">– ${esc(u.phone)}</span>`:""}${c&&(a.by===me.id||isMod()||u.id===me.id)?`<div class="small muted" style="font-style:italic">«${NB}${esc(c)}${NB}»</div>`:""}</li>`;}).join("")}</ul>`:`<p class="muted">Personne pour l'instant.</p>`}
     <p class="small muted">Les numéros des personnes disponibles et leurs messages ne sont visibles que par le responsable de l'action et les modérateurs.</p></div>`;
 };
@@ -393,8 +416,8 @@ function form(a,isNew){
 V.new=()=>`<h1>${prefill?"Dupliquer une action":"Proposer une action"}</h1><p class="muted">${prefill?"Les informations sont reprises&nbsp;; vérifiez la date avant de publier.":"Elle sera visible immédiatement par les membres validés."}</p>${form(prefill,true)}`;
 V.edit=()=>`<h1>Modifier l'action</h1>${form(actions.find(x=>x.id===param),false)}`;
 V.mine=()=>{
-  const mine=avail.filter(x=>x.u===me.id).map(x=>actions.find(a=>a.id===x.a)).filter(Boolean);
-  const prop=actions.filter(a=>a.by===me.id);
+  const mine=avail.filter(x=>x.u===me.id).map(x=>actions.find(a=>a.id===x.a)).filter(a=>a&&!isPast(a));
+  const prop=actions.filter(a=>a.by===me.id&&!isPast(a));
   return `<h1>Mes disponibilités</h1>${mine.length?mine.map(actionCard).join(""):`<p class="muted">Vous ne vous êtes inscrit à aucune action.</p>`}
   <h1 style="margin-top:24px">Actions dont je suis responsable</h1>${prop.length?prop.map(actionCard).join(""):`<p class="muted">Vous n'êtes responsable d'aucune action.</p>`}`;
 };
@@ -539,7 +562,7 @@ document.addEventListener("click",e=>{
     dlg.onclose=()=>{if(dlg.returnValue==="ok"){signUp(a,document.getElementById("dispotxt").value.trim());render();}};
     dlg.returnValue="";dlg.showModal();document.getElementById("dispotxt").focus();return;}
   if(act==="edit"){go("edit",aid);return;}
-  if(act==="dup"){prefill=Object.assign({},a,{date:nextDay(a.date),id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
+  if(act==="dup"){prefill=Object.assign({},a,{date:[nextDay(a.date),addDays(1)].sort()[1],id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
       <p class="hint">${count(a)}${NB}personne(s) inscrite(s) recevront un e-mail.</p><div class="row" style="margin-top:10px"><button class="primary" type="submit">Confirmer l'annulation</button></div></form>`;
     document.getElementById("cancelf").onsubmit=ev=>{ev.preventDefault();a.status="cancelled";a.cancelMsg=new FormData(ev.target).get("msg").trim();const n=notifyChange(a,"cancel");toast("Action annulée"+(n?" – "+n+" inscrit(s) prévenu(s)":""));render();};return;}
