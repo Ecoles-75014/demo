@@ -89,6 +89,15 @@
   .mail b{display:block}
   .dlg{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:18px 20px;width:min(460px,92vw)}
   .dlg::backdrop{background:rgba(0,0,0,.4)}
+/* Tableaux en fiches sur téléphone : chaque ligne devient un bloc, avec le nom de la colonne au-dessus de la valeur. */
+  @media (max-width:640px){
+    table.stack, table.stack tbody, table.stack tr, table.stack td{display:block;width:100%}
+    table.stack tr.thead{display:none}
+    table.stack tr{border-bottom:1px solid var(--line);padding:10px 0}
+    table.stack td{border:none;padding:3px 0}
+    table.stack td[data-label]:not([data-label=""])::before{content:attr(data-label);display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+    table.stack td:empty{display:none}
+  }
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:.92rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:6}
   .toast.on{opacity:1}
   footer{max-width:980px;margin:0 auto;padding:0 18px 30px;font-size:.82rem;color:var(--muted)}
@@ -446,6 +455,21 @@ V.privacy=()=>`<p><a href="#" data-go="${isMember()?"list":"login"}">← Retour<
   <h2>Finalité et conservation</h2><p>Organiser les actions du collectif. Les actions passées sont supprimées au bout de 90${NB}jours&nbsp;; votre compte peut être supprimé à tout moment depuis «${NB}Mon compte${NB}».</p>
   <h2>Responsable de la publication et hébergeur</h2><p>[Nom du responsable de la publication] – [contact]. Hébergement&nbsp;: [hébergeur, adresse].</p></div>`;
 
+  // Sur téléphone, les tableaux s'affichent en fiches : on recopie le titre de chaque colonne dans ses cellules.
+function stackTables(root) {
+  (root || document).querySelectorAll('table').forEach(function (t) {
+    var head = t.querySelector('tr');
+    if (!head || !head.querySelector('th')) return;
+    head.classList.add('thead');
+    var labels = Array.prototype.map.call(head.children, function (c) { return c.textContent.trim(); });
+    t.querySelectorAll('tr').forEach(function (tr) {
+      if (tr === head) return;
+      Array.prototype.forEach.call(tr.children, function (td, i) { td.setAttribute('data-label', labels[i] || ''); });
+    });
+    t.classList.add('stack');
+  });
+}
+
 // ---------- rendu ----------
 function render(){
   if(!me){ if(!["privacy","otp","login"].includes(view)) view="login"; }
@@ -454,6 +478,7 @@ function render(){
   if(view==="settings" && !isAdmin()) view="list";
   if(view!=="new") prefill=null;
   document.getElementById("main").innerHTML=(V[view]||V.list)();
+  stackTables(document.getElementById("main"));
   header();
   const fs=document.getElementById("fs"), ft=document.getElementById("ft");
   if(fs) fs.onchange=()=>{fSector=fs.value;render();};
