@@ -87,6 +87,8 @@
   .mailbox.on{display:block}
   .mail{border-bottom:1px solid var(--line);padding:8px 0;font-size:.88rem}
   .mail b{display:block}
+  .dlg{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:18px 20px;width:min(460px,92vw)}
+  .dlg::backdrop{background:rgba(0,0,0,.4)}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:.92rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:6}
   .toast.on{opacity:1}
   footer{max-width:980px;margin:0 auto;padding:0 18px 30px;font-size:.82rem;color:var(--muted)}
@@ -106,6 +108,13 @@
 <main id="main"></main>
 <footer><a href="#" data-go="privacy">Confidentialité et mentions légales</a> · Démonstration : collectif, lieux, établissements et personnes fictifs.</footer>
 <div class="mailbox" id="mailbox"></div>
+<dialog id="dispodlg" class="dlg"><form method="dialog">
+  <h2 style="margin-top:0">Je suis disponible</h2>
+  <label id="dispolbl" for="dispotxt" style="display:block;font-weight:600;font-size:.9rem;margin:0 0 4px"></label>
+  <textarea id="dispotxt" maxlength="300" rows="3" style="width:100%;font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)" placeholder="J’arriverai à 8&nbsp;h&nbsp;30, je peux apporter du scotch…"></textarea>
+  <p class="hint">Facultatif. Seuls le responsable de l’action et les modérateurs le liront.</p>
+  <div class="row" style="margin-top:12px"><button class="primary" value="ok">M’inscrire</button><button value="cancel" formnovalidate>Annuler</button></div>
+</form></dialog>
 <div class="toast" id="toast"></div>
 <div class="watermark" aria-hidden="true"><span>DÉMO</span></div>
 
@@ -327,10 +336,7 @@ V.detail=()=>{
     <div id="icsbox"></div>`:""}
     <div class="row" style="margin-top:12px">${open&&amIn(a)?toggleBtn(a,true):""}
       ${canEdit?`<span class="spacer"></span>${open?`<button data-act="edit" data-a="${a.id}">Modifier</button><button data-act="cancel" data-a="${a.id}">Annuler l'action</button>`:`<button data-act="reopen" data-a="${a.id}">Rétablir</button>`}<button data-act="dup" data-a="${a.id}">Dupliquer</button>`:`<span class="spacer"></span><button data-act="dup" data-a="${a.id}">Dupliquer</button>`}</div>
-    ${open&&!amIn(a)?`<form id="dispof" class="card" style="margin:12px 0 0;background:var(--bg)"><label>Message pour ${esc(a.name)} (facultatif)</label>
-      <textarea name="c" maxlength="300" rows="2" placeholder="J'arriverai à 8 h 30, je peux apporter du scotch…"></textarea>
-      <p class="hint">Seuls le responsable de l'action et les modérateurs le liront.</p>
-      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Je suis disponible</button></div></form>`:""}
+    ${open&&!amIn(a)?`<div class="row" style="margin-top:12px"><button class="primary" data-act="toggle" data-a="${a.id}">Je suis disponible</button></div>`:""}
     ${open&&amIn(a)?`<details style="margin-top:12px" ${myComment(a)?"open":""}><summary style="cursor:pointer;font-weight:600;color:var(--accent)">${myComment(a)?"Mon message au responsable":"Ajouter un message pour le responsable"}</summary>
       <form id="msgf" class="card" style="margin:10px 0 0;background:var(--bg)"><label>Message pour ${esc(a.name)}</label>
       <textarea name="c" maxlength="300" rows="2">${esc(myComment(a))}</textarea>
@@ -476,7 +482,6 @@ function render(){
     if("n_inscrits" in v||document.querySelector('[name="n_inscrits"]')) me.notif={inscrits:!!v.n_inscrits,changes:!!v.n_changes,rappel:!!v.n_rappel};
     if(view==="pending"&&v.school){const mods=users.filter(u=>u.role==="moderator"&&sectorOf(u.school)===sectorOf(v.school));mods.forEach(m=>sendMail(m,"Nouveau compte à valider : "+me.name,me.name+" ("+me.email+") attend la validation de son compte pour l'établissement "+v.school+".\n"+SITE+"/moderation"));}
     toast("Enregistré");go(view==="welcome"?"list":view);});
-  on("dispof",v=>{const a=actions.find(x=>x.id===param);signUp(a,(v.c||"").trim());render();});
   on("msgf",v=>{const a=actions.find(x=>x.id===param);const r=avail.find(x=>x.a===a.id&&x.u===me.id);const c=(v.c||"").trim();
     if(r&&c!==(r.c||"")){r.c=c;const p=userById(a.by);if(p&&p.id!==me.id&&p.notif.inscrits)sendMail(p,"Message de "+me.name+" : "+a.title,me.name+(c?" a modifié son message :\n« "+c+" »":" a retiré son message.")+"\n\n"+resume(a));}
     toast(c?"Message enregistré et transmis au responsable":"Message retiré");render();});
@@ -501,8 +506,13 @@ document.addEventListener("click",e=>{
   if(act==="logout"){me=null;pendingInvite=null;go("login");return;}
   if(act==="resend"){otp.code=String(Math.floor(100000+Math.random()*900000));otp.exp=Date.now()+10*60000;otp.tries=0;flash={};toast("Nouveau code envoyé");render();return;}
   if(act==="toggle"){const i=avail.findIndex(x=>x.a===aid&&x.u===me.id);
-    if(i>=0){avail.splice(i,1);toast("Disponibilité retirée");} else signUp(a,"");
-    render();return;}
+    if(i>=0){avail.splice(i,1);toast("Disponibilité retirée");render();return;}
+    const dlg=document.getElementById("dispodlg");
+    if(typeof dlg.showModal!=="function"){signUp(a,"");render();return;}
+    document.getElementById("dispolbl").textContent="Un message pour "+a.name+NB+"?";
+    document.getElementById("dispotxt").value="";
+    dlg.onclose=()=>{if(dlg.returnValue==="ok"){signUp(a,document.getElementById("dispotxt").value.trim());render();}};
+    dlg.returnValue="";dlg.showModal();document.getElementById("dispotxt").focus();return;}
   if(act==="edit"){go("edit",aid);return;}
   if(act==="dup"){prefill=Object.assign({},a,{date:nextDay(a.date),id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
