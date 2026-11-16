@@ -234,7 +234,7 @@ function header(){
     const items=[["list","Actions"],["new","Proposer une action"],["mine","Mes actions"],["account","Mon compte"]];
     if(isMod()) items.push(["admin","Modération"]);
     if(isAdmin()) items.push(["settings","Paramètres"]);
-    nav.innerHTML=items.map(([k,l])=>`<a href="#" data-go="${k}" class="${view===k||(view==="detail"&&k==="list")||(view==="edit"&&k==="new")?"on":""}">${l}</a>`).join("");
+    nav.innerHTML=items.map(([k,l])=>`<a href="#" data-go="${k}" class="${view===k||((view==="detail"||view==="past")&&k==="list")||(view==="edit"&&k==="new")?"on":""}">${l}</a>`).join("");
   }
   who.innerHTML = me ? `${esc(me.name)} <button class="link" data-act="logout">Se déconnecter</button>` : "";
 }
