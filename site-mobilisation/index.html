@@ -67,10 +67,13 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px} @media (max-width:640px){.grid2{grid-template-columns:1fr}}
   .check{display:flex;gap:8px;align-items:flex-start;font-weight:400 !important;margin-top:12px}
   .check input{width:auto;margin-top:4px}
+  .fiche{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:10px 0}
+  .fiche dt{font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding-top:2px}
+  .fiche dd{margin:0}
+  @media (max-width:640px){.fiche{grid-template-columns:1fr}.fiche dd{margin-bottom:6px}}
   .hint{font-size:.85rem;color:var(--muted);margin-top:3px}
   .login{max-width:440px;margin:30px auto;text-align:center}
   .login form{text-align:left}
-  .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer;color:var(--ink);font:inherit;font-weight:600}
   .sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;margin:16px 0}
   .sep:before,.sep:after{content:"";flex:1;height:1px;background:var(--line)}
   .otp{font-size:1.6rem;letter-spacing:.5em;text-align:center;font-variant-numeric:tabular-nums}
@@ -153,7 +156,7 @@ let SECTORS=["Nord","Sud"];
 let TYPES=["Tractage","Affichage","Rassemblement","Réunion","Présence au groupe de travail","Autre"];
 const A=["Les Tilleuls (mat.)","Les Tilleuls (élém.)","Le Parc (mat.)","Le Parc (élém.)","Les Lilas (primaire)","Victor Hugo (élém.)"];
 const B=["Le Moulin (mat.)","Le Moulin (élém.)","Les Peupliers (mat.)","Les Peupliers (élém.)","La Gare (primaire)"];
-let schools=A.map(n=>({n,s:"Nord"})).concat(B.map(n=>({n,s:"Sud"})));
+let schools=A.map(n=>({n,s:"Nord"})).concat(B.map(n=>({n,s:"Sud"}))).map((x,i)=>Object.assign(x,{id:i+1,ref:null,consent:false,depot:"",notes:"",upd:""}));
 let invites={"Nord":{token:token(),since:addDays(-6),used:3},"Sud":{token:token(),since:addDays(-6),used:5}};
 const inviteUrl=s=>SITE+"/rejoindre/"+invites[s].token;
 
@@ -161,7 +164,6 @@ const SEC_CLS=["t-a","t-b","t-c","t-alert"];
 const secTag=s=>s?`<span class="tag ${SEC_CLS[Math.max(0,SECTORS.indexOf(s))%SEC_CLS.length]}">${esc(s)}</span>`:"";
 const sectorOf=n=>(schools.find(x=>x.n===n)||{}).s||"";
 const schoolSelect=(name,v,emptyLabel,onlySector)=>`<select name="${name}" id="sel-${name}"><option value="">${emptyLabel}</option>${SECTORS.filter(s=>!onlySector||s===onlySector).map(s=>`<optgroup label="Secteur ${s}">${schools.filter(x=>x.s===s).sort((a,b)=>a.n.localeCompare(b.n,"fr")).map(x=>`<option ${x.n===v?"selected":""}>${esc(x.n)}</option>`).join("")}</optgroup>`).join("")}</select>`;
-const GLOGO=`<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.8 6C12.3 13.5 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.8c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.4 0-11.7-4-13.6-9.7l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>`;
 
 // ---------- données fictives ----------
 const NOTIF_DEFAULT={inscrits:true,changes:true,rappel:true};
@@ -175,6 +177,12 @@ let users=[
   {id:7,name:"Marc",email:"marc.demo@gmail.com",phone:"",school:"Victor Hugo (élém.)",role:"pending",notif:{...NOTIF_DEFAULT}},
   {id:8,name:"Alex",email:"admin.demo@gmail.com",phone:"",school:"La Gare (primaire)",role:"admin",notif:{...NOTIF_DEFAULT}}
 ];
+// Fiches de démonstration : deux référents, dont un seul a accepté d'afficher son numéro.
+Object.assign(schools.find(x=>x.n==="Le Moulin (mat.)"),{ref:2,consent:true,depot:"Local du collectif, à côté du marché",notes:"Tracts disponibles le lundi soir.",upd:addDays(-2)});
+Object.assign(schools.find(x=>x.n==="Les Tilleuls (élém.)"),{ref:3,consent:false,depot:"Chez le marchand de journaux (avec son accord)",upd:addDays(-4)});
+const schoolById=id=>schools.find(x=>x.id===id);
+const refPhone=x=>{const r=x.ref&&userById(x.ref);return r&&x.consent&&r.phone?r.phone:"";};
+const telLink=t=>`<a href="tel:${esc(t.replace(/[^0-9+]/g,""))}">${esc(t)}</a>`;
 let actions=[
   {id:1,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à l'entrée de l'école de la Gare",place:"Devant l'école de la Gare",sector:"Sud",date:addDays(2),start:"08:20",end:"08:50",needed:4,desc:"Tracts à récupérer chez Nadia la veille.",status:"open"},
   {id:2,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Tournée d'affichage avenue des Tilleuls",place:"Commerces de l'avenue des Tilleuls",sector:"Nord",date:addDays(3),start:"17:00",end:"19:00",needed:3,desc:"20 affiches A3 et du scotch fournis.",status:"open"},
@@ -231,10 +239,10 @@ function header(){
   const nav=document.getElementById("nav"), who=document.getElementById("who");
   if(!isMember()) nav.innerHTML="";
   else {
-    const items=[["list","Actions"],["new","Proposer une action"],["mine","Mes actions"],["account","Mon compte"]];
+    const items=[["list","Actions"],["schools","Établissements"],["new","Proposer une action"],["mine","Mes actions"],["account","Mon compte"]];
     if(isMod()) items.push(["admin","Modération"]);
     if(isAdmin()) items.push(["settings","Paramètres"]);
-    nav.innerHTML=items.map(([k,l])=>`<a href="#" data-go="${k}" class="${view===k||((view==="detail"||view==="past")&&k==="list")||(view==="edit"&&k==="new")?"on":""}">${l}</a>`).join("");
+    nav.innerHTML=items.map(([k,l])=>`<a href="#" data-go="${k}" class="${view===k||((view==="detail"||view==="past")&&k==="list")||(view==="edit"&&k==="new")||(view==="school"&&k==="schools")?"on":""}">${l}</a>`).join("");
   }
   who.innerHTML = me ? `${esc(me.name)} <button class="link" data-act="logout">Se déconnecter</button>` : "";
 }
@@ -250,8 +258,6 @@ V.login=()=>`<div class="login card">
     <p class="hint">Vous recevrez un code à 6${NB}chiffres. Pas de mot de passe à retenir.</p>
     <div class="row" style="margin-top:12px"><button class="primary" type="submit" style="width:100%">Recevoir mon code de connexion</button></div>
   </form>
-  <div class="sep">ou</div>
-  <button class="gbtn" data-act="google">${GLOGO}Continuer avec Google</button>
   <div class="sep">démonstration</div>
   <p class="small muted">Comptes existants&nbsp;: camille.demo@gmail.com, nadia.demo@gmail.com (modératrice), admin.demo@gmail.com (administrateur). Toute autre adresse crée un nouveau compte.</p>
   <div class="roles">
@@ -464,7 +470,7 @@ V.settings=()=>`<h1>Paramètres</h1><p class="muted">Réservé aux administrateu
   <div class="card"><h2>Établissements (${schools.length})</h2>
     <p class="small muted">Changer un établissement de secteur met à jour le secteur de tous les comptes qui y sont rattachés.</p>
     <table><tr><th>Établissement</th><th>Secteur</th><th>Comptes</th><th></th></tr>${[...schools].sort((a,b)=>a.s.localeCompare(b.s)||a.n.localeCompare(b.n,"fr")).map(x=>{const n=users.filter(u=>u.school===x.n).length;return `<tr>
-      <td>${esc(x.n)}</td><td><select data-act="schsec" data-n="${esc(x.n)}">${SECTORS.map(s=>`<option ${s===x.s?"selected":""}>${s}</option>`).join("")}</select></td><td>${n}</td>
+      <td><a href="#" data-go="school" data-p="${x.id}">${esc(x.n)}</a></td><td><select data-act="schsec" data-n="${esc(x.n)}">${SECTORS.map(s=>`<option ${s===x.s?"selected":""}>${s}</option>`).join("")}</select></td><td>${n}</td>
       <td>${n?"":`<button class="link" data-act="delsch" data-n="${esc(x.n)}">Supprimer</button>`}</td></tr>`;}).join("")}</table>
     <form id="schf" class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:1;min-width:200px"><label>Nouvel établissement</label><input name="n" required placeholder="Nouvel établissement (rentrée 2027)"></div>
       <div><label>Secteur</label><select name="s">${SECTORS.map(s=>`<option>${s}</option>`).join("")}</select></div><button type="submit">Ajouter</button></form></div>
@@ -472,9 +478,51 @@ V.settings=()=>`<h1>Paramètres</h1><p class="muted">Réservé aux administrateu
     <div class="row">${TYPES.map(t=>`<span class="tag t-type" style="padding:4px 10px">${esc(t)} <button class="link" data-act="deltype" data-t="${esc(t)}" title="Retirer">×</button></span>`).join("")}</div>
     <form id="typef" class="row" style="margin-top:10px;align-items:flex-end"><div><label>Nouveau type</label><input name="t" required placeholder="Pique-nique revendicatif"></div><button type="submit">Ajouter</button></form></div>
   <div class="card"><h2>Conservation des données</h2><p>Les actions passées sont supprimées automatiquement au bout de <strong>90${NB}jours</strong>, avec les disponibilités associées. Ce délai se règle dans le fichier de configuration du serveur.</p></div>`;
+V.schools=()=>{
+  const rows=schools.filter(x=>!fSector||x.s===fSector).sort((a,b)=>a.s.localeCompare(b.s)||a.n.localeCompare(b.n,"fr"));
+  const missing=rows.filter(x=>!x.ref).length;
+  return `<h1>Établissements</h1><p class="muted small">Chaque établissement peut avoir un référent, membre du site, et un point de dépôt du matériel. Le numéro d'un référent n'est affiché qu'avec son accord.</p>
+  <div class="filters"><label class="small">Secteur&nbsp;: <select id="fs"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===fSector?"selected":""}>${s}</option>`).join("")}</select></label></div>
+  <p class="small">${rows.length}${NB}établissement${rows.length>1?"s":""}${missing?`, dont <strong>${missing}${NB}sans référent</strong>`:", tous avec un référent"}.</p>
+  <div class="card"><table><tr><th>Établissement</th><th>Secteur</th><th>Référent</th><th>Téléphone</th><th>Point de dépôt</th></tr>
+  ${rows.map(x=>{const r=x.ref&&userById(x.ref),t=refPhone(x);return `<tr><td><a href="#" data-go="school" data-p="${x.id}">${esc(x.n)}</a></td><td>${secTag(x.s)}</td>
+    <td>${r?esc(r.name)+(r.id===me.id?' <span class="small muted">(vous)</span>':""):'<span class="tag t-alert">À trouver</span>'}</td><td>${t?telLink(t):""}</td><td class="small">${esc(x.depot)}</td></tr>`;}).join("")}</table></div>`;
+};
+V.school=()=>{
+  const x=schoolById(param); if(!x) return `<p>Établissement introuvable.</p>`;
+  const r=x.ref&&userById(x.ref), isRef=!!r&&r.id===me.id, canEdit=isMod()||isRef, t=refPhone(x);
+  const nb=users.filter(u=>u.school===x.n&&u.role!=="pending").length;
+  const consentBox=checked=>me.phone?`<label class="check"><input type="checkbox" name="consent" value="1" ${checked?"checked":""}> J'accepte que mon numéro (${esc(me.phone)}) soit visible par les membres validés du site.</label>`:`<p class="hint">Aucun numéro dans votre compte. Ajoutez-le dans <a href="#" data-go="account">Mon compte</a> si vous souhaitez l'afficher.</p>`;
+  const sum=l=>`<summary style="cursor:pointer;font-weight:600;color:var(--accent)">${l}</summary>`;
+  const box='class="card" style="margin:10px 0 0;background:var(--bg)"';
+  const next=actions.filter(a=>!isPast(a)&&(a.sector===x.s||!a.sector)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||""))).slice(0,5);
+  return `<p><a href="#" data-go="schools">← Retour aux établissements</a></p>
+  <div class="card"><div class="row" style="gap:6px">${secTag(x.s)}<span class="small muted">${nb}${NB}membre${nb>1?"s":""} rattaché${nb>1?"s":""}</span></div>
+    <h1 style="margin-top:6px">${esc(x.n)}</h1>
+    <dl class="fiche"><dt>Référent</dt><dd>${r?esc(r.name)+(isRef?' <span class="small muted">(vous)</span>':"")+(t?" – "+telLink(t):isRef?"":' <span class="small muted">(numéro non communiqué)</span>'):'<span class="tag t-alert">À trouver</span>'}</dd>
+      <dt>Point de dépôt</dt><dd>${x.depot?esc(x.depot):'<span class="muted">Non renseigné</span>'}</dd>
+      <dt>Notes</dt><dd>${x.notes?esc(x.notes).replace(/\n/g,"<br>"):'<span class="muted">Aucune</span>'}</dd></dl>
+    ${x.upd?`<p class="small muted">Fiche mise à jour le ${esc(longDate(x.upd).replace(/\.$/,""))}.</p>`:""}
+    ${!r?`<form id="devenirf" ${box}><p style="margin-top:0"><strong>Cet établissement n'a pas encore de référent.</strong> Le référent relaie les actions auprès de l'établissement et tient la fiche à jour.</p>${consentBox(false)}
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Je deviens référent</button></div></form>`:""}
+    ${isRef?`<details style="margin-top:12px" ${x.consent?"":"open"}>${sum("Mon numéro sur la fiche")}<form id="consentf" ${box}>${consentBox(x.consent)}${me.phone?`<div class="row" style="margin-top:10px"><button type="submit">Enregistrer</button></div>`:""}</form></details>`:""}
+    ${canEdit?`<details style="margin-top:12px">${sum("Modifier le point de dépôt et les notes")}<form id="fichef" ${box}>
+      <label>Point de dépôt du matériel</label><input name="depot" maxlength="200" value="${esc(x.depot)}" placeholder="Local, commerce partenaire, lieu de rendez-vous…">
+      <p class="hint">N'indiquez pas l'adresse personnelle de quelqu'un sans son accord.</p>
+      <label>Notes</label><textarea name="notes" maxlength="500" rows="3">${esc(x.notes)}</textarea><p class="hint">Visibles par tous les membres validés. Aucune coordonnée personnelle.</p>
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Enregistrer</button></div></form></details>`:""}
+    ${isMod()?`<details style="margin-top:12px">${sum(r?"Changer de référent":"Nommer un référent")}<form id="nommerf" ${box}><label>Référent</label>
+      <select name="u"><option value="0">Aucun référent</option>${SECTORS.concat([""]).map(sec=>{const list=users.filter(u=>u.role!=="pending"&&sectorOf(u.school)===sec).sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+        return list.length?`<optgroup label="${sec?"Secteur "+esc(sec):"Sans secteur"}">${list.map(u=>`<option value="${u.id}" ${u.id===x.ref?"selected":""}>${esc(u.name)}</option>`).join("")}</optgroup>`:"";}).join("")}</select>
+      <p class="hint">La personne nommée est prévenue par e-mail. Son numéro n'est affiché qu'après son propre accord.</p>
+      <div class="row" style="margin-top:10px"><button type="submit">Enregistrer</button></div></form></details>`:""}
+    ${isRef?`<p style="margin-top:12px"><button class="link" data-act="quitref">Ne plus être référent</button></p>`:""}
+  </div>
+  <h2>Prochaines actions du secteur</h2>${next.length?next.map(actionCard).join(""):`<p class="muted">Aucune action à venir.</p>`}`;
+};
 V.privacy=()=>`<p><a href="#" data-go="${isMember()?"list":"login"}">← Retour</a></p><div class="card"><h1>Confidentialité et mentions légales</h1>
   <p class="muted small">Texte à compléter et à faire valider par un juriste.</p>
-  <h2>Données collectées</h2><p>Nom, adresse e-mail, établissement, téléphone si vous le renseignez, actions proposées et disponibilités. Le numéro d'un proposant n'est affiché aux membres validés qu'avec son accord. Aucun mot de passe n'est enregistré&nbsp;: la connexion se fait par un code envoyé par e-mail ou par Google.</p>
+  <h2>Données collectées</h2><p>Nom, adresse e-mail, établissement, téléphone si vous le renseignez, actions proposées et disponibilités. Le numéro d'un proposant n'est affiché aux membres validés qu'avec son accord, de même que celui du référent d'un établissement, qui peut retirer cet accord à tout moment. Aucun mot de passe n'est enregistré&nbsp;: la connexion se fait par un code envoyé par e-mail.</p>
   <h2>Finalité et conservation</h2><p>Organiser les actions du collectif. Les actions passées sont supprimées au bout de 90${NB}jours&nbsp;; votre compte peut être supprimé à tout moment depuis «${NB}Mon compte${NB}».</p>
   <h2>Responsable de la publication et hébergeur</h2><p>[Nom du responsable de la publication] – [contact]. Hébergement&nbsp;: [hébergeur, adresse].</p></div>`;
 
@@ -534,8 +582,16 @@ function render(){
     if(r&&c!==(r.c||"")){r.c=c;const p=userById(a.by);if(p&&p.id!==me.id&&p.notif.inscrits)sendMail(p,"Message de "+me.name+" : "+a.title,me.name+(c?" a modifié son message :\n« "+c+" »":" a retiré son message.")+"\n\n"+resume(a));}
     toast(c?"Message enregistré et transmis au responsable":"Message retiré");render();});
   on("transf",v=>{if(!v.u)return;const a=actions.find(x=>x.id===param);const to=userById(Number(v.u));transfer(a,to);toast("Responsabilité transférée à "+to.name);render();});
+  const sx=()=>schoolById(param), today=()=>addDays(0);
+  on("devenirf",v=>{const x=sx();if(x.ref){toast("Cet établissement a déjà un référent");render();return;}x.ref=me.id;x.consent=!!v.consent&&!!me.phone;x.upd=today();toast("Vous êtes maintenant référent de "+x.n);render();});
+  on("consentf",v=>{const x=sx();x.consent=!!v.consent&&!!me.phone;toast(x.consent?"Votre numéro est affiché sur la fiche":"Votre numéro n'est plus affiché");render();});
+  on("fichef",v=>{const x=sx();x.depot=(v.depot||"").trim();x.notes=(v.notes||"").trim();x.upd=today();toast("Fiche enregistrée");render();});
+  on("nommerf",v=>{const x=sx(),id=Number(v.u);if(id===x.ref){render();return;}x.ref=id||null;x.consent=false;x.upd=today();
+    if(!id){toast("Référent retiré");render();return;}const to=userById(id);
+    if(to.id!==me.id){sendMail(to,"Vous êtes référent : "+x.n,"Bonjour "+to.name+",\n\n"+me.name+" vous a nommé(e) référent de "+x.n+" ("+x.s+").\n\nVotre numéro de téléphone n'est pas affiché sur la fiche. Pour le rendre visible des membres validés, ouvrez la fiche et cochez la case prévue :\n"+SITE+"/index.php?p=etablissement&id="+x.id+"\n\nSi vous ne souhaitez pas être référent, vous pouvez vous retirer depuis cette même page.");toast(to.name+" est référent et en est prévenu(e) par e-mail");}
+    else toast("Vous êtes maintenant référent de "+x.n);render();});
   on("secf",v=>{const s=v.s.trim();if(s&&!SECTORS.includes(s)){SECTORS.push(s);invites[s]={token:token(),since:addDays(0),used:0};toast("Secteur ajouté, avec son lien d'invitation");}render();});
-  on("schf",v=>{const n=v.n.trim();if(n&&!schools.some(x=>x.n===n)){schools.push({n,s:v.s});toast("Établissement ajouté");}render();});
+  on("schf",v=>{const n=v.n.trim();if(n&&!schools.some(x=>x.n===n)){schools.push({n,s:v.s,id:Math.max(0,...schools.map(x=>x.id))+1,ref:null,consent:false,depot:"",notes:"",upd:""});toast("Établissement ajouté");}render();});
   on("typef",v=>{const t=v.t.trim();if(t&&!TYPES.includes(t)){TYPES.push(t);toast("Type ajouté");}render();});
   const sch=document.getElementById("sel-school"), hint=document.getElementById("sec-hint");
   if(sch&&hint) sch.onchange=()=>{hint.innerHTML=sch.value?"Secteur"+NB+": "+secTag(sectorOf(sch.value)):"Le secteur sera déduit de l'établissement.";};
@@ -548,7 +604,6 @@ document.addEventListener("click",e=>{
   const g=e.target.closest("[data-go]"); if(g){e.preventDefault();if(g.dataset.go==="new")prefill=null;go(g.dataset.go,g.dataset.p?Number(g.dataset.p):null);return;}
   const b=e.target.closest("[data-act]"); if(!b||b.tagName==="SELECT") return;
   const act=b.dataset.act, aid=Number(b.dataset.a), a=actions.find(x=>x.id===aid);
-  if(act==="google"){toast("Sur le site réel, Google vous demande de choisir votre compte.");return;}
   if(act==="invite"){pendingInvite=b.dataset.s;me=null;flash={};go("login");toast("Lien d'invitation du secteur "+b.dataset.s+" ouvert");return;}
   if(act==="as"){me=userById(Number(b.dataset.u));pendingInvite=null;go(me.role==="pending"?"pending":"list");return;}
   if(act==="logout"){me=null;pendingInvite=null;go("login");return;}
@@ -561,6 +616,7 @@ document.addEventListener("click",e=>{
     document.getElementById("dispotxt").value="";
     dlg.onclose=()=>{if(dlg.returnValue==="ok"){signUp(a,document.getElementById("dispotxt").value.trim());render();}};
     dlg.returnValue="";dlg.showModal();document.getElementById("dispotxt").focus();return;}
+  if(act==="quitref"){if(!confirmClick(b,"quitref","Confirmer : ne plus être référent"))return;const x=schoolById(param);x.ref=null;x.consent=false;x.upd=addDays(0);toast("Vous n'êtes plus référent de "+x.n);render();return;}
   if(act==="edit"){go("edit",aid);return;}
   if(act==="dup"){prefill=Object.assign({},a,{date:[nextDay(a.date),addDays(1)].sort()[1],id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
@@ -571,7 +627,7 @@ document.addEventListener("click",e=>{
   if(act==="copy"){try{navigator.clipboard.writeText(shareText(a)).then(()=>toast("Message copié"),()=>toast("Copie impossible ici"));}catch(err){toast("Copie impossible ici");}return;}
   if(act==="approve"){const u=userById(Number(b.dataset.u));u.role="member";sendMail(u,"Votre compte est validé","Bonjour "+u.name+", votre compte est validé. Vous pouvez voir les actions et vous inscrire :\n"+SITE);toast("Compte validé – "+u.name+" est prévenu(e)");render();return;}
   if(act==="refuse"){users=users.filter(u=>u.id!==Number(b.dataset.u));toast("Compte refusé");render();return;}
-  if(act==="block"){if(!confirmClick(b,"block"+b.dataset.u,"Confirmer"))return;userById(Number(b.dataset.u)).role="pending";toast("Accès retiré : compte remis en attente");render();return;}
+  if(act==="block"){if(!confirmClick(b,"block"+b.dataset.u,"Confirmer"))return;userById(Number(b.dataset.u)).role="pending";schools.forEach(x=>{if(x.ref===Number(b.dataset.u)){x.ref=null;x.consent=false;}});toast("Accès retiré : compte remis en attente");render();return;}
   if(act==="csv"){toast("Démonstration : pas de téléchargement ici.");return;}
   if(act==="copyinv"){try{navigator.clipboard.writeText(inviteUrl(b.dataset.s)).then(()=>toast("Lien copié – à partager uniquement dans le groupe WhatsApp du secteur"),()=>toast("Copie impossible ici"));}catch(err){toast("Copie impossible ici");}return;}
   if(act==="resetinv"){if(!confirmClick(b,"reset"+b.dataset.s,"Confirmer : l'ancien lien ne marchera plus"))return;invites[b.dataset.s]={token:token(),since:addDays(0),used:0};toast("Nouveau lien créé pour "+b.dataset.s+" : partagez-le dans le groupe du secteur");render();return;}
