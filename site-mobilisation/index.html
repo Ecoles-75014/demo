@@ -304,17 +304,18 @@ function recapText(sec){
   const ML=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
   const longDate=iso=>{const x=d(iso);return JOURS[x.getDay()]+" "+x.getDate()+NB+ML[x.getMonth()];};
   const rows=actions.filter(a=>a.date>=from&&a.date<=to&&(!sec||a.sector===sec||!a.sector)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||"")));
-  const L=["*Actions à venir – "+(sec?"secteur "+sec:"tous secteurs")+"*","Du "+longDate(from)+" au "+longDate(to)];
+  const TE=t=>{t=t.toLowerCase();for(const [k,e] of [["tract","📄"],["affich","📌"],["rassembl","✊"],["manif","✊"],["réunion","🗣️"],["concertation","🗣️"],["groupe de travail","🗣️"]]) if(t.includes(k)) return e; return "🔹";};
+  const L=["📣 *Actions à venir – "+(sec?"secteur "+sec:"tous secteurs")+"*","Du "+longDate(from)+" au "+longDate(to)];
   if(!rows.length){L.push("","Aucune action prévue pour le moment. Proposez-en une : "+SITE+"/proposer");return L.join("\n");}
   let day=null;
   rows.forEach(a=>{
-    if(a.date!==day){day=a.date;L.push("","*"+cap(longDate(day))+"*");}
+    if(a.date!==day){day=a.date;L.push("","📅 *"+cap(longDate(day))+"*");}
     const head=horaire(a)+" · "+(a.title.toLowerCase().startsWith(a.type.toLowerCase())?a.title:a.type+" – "+a.title);
-    if(a.status==="cancelled"){L.push("• ~"+head+"~ (annulée)");return;}
+    if(a.status==="cancelled"){L.push("❌ ~"+head+"~ (annulée)");return;}
     const n=count(a), need=a.needed||0;
-    L.push("• "+head,"   Lieu : "+a.place,"   "+(need&&n<need?n+" inscrit"+(n>1?"s":"")+" sur "+need+" : *il manque "+(need-n)+NB+"personne"+(need-n>1?"s":"")+"*":need?"Complet ("+n+" inscrit"+(n>1?"s":"")+")":n?n+" inscrit"+(n>1?"s":""):"Pas encore d'inscrit"),"   "+actionUrl(a));
+    L.push(TE(a.type)+" "+head,"   📍 "+a.place,"   "+(need&&n<need?"🙋 "+n+" inscrit"+(n>1?"s":"")+" sur "+need+" : *il manque "+(need-n)+NB+"personne"+(need-n>1?"s":"")+"*":need?"✅ Complet ("+n+" inscrit"+(n>1?"s":"")+")":"🙋 "+(n?n+" inscrit"+(n>1?"s":""):"Pas encore d'inscrit")),"   👉 "+actionUrl(a));
   });
-  L.push("","Pour vous inscrire, ouvrez le lien de l'action et cliquez sur « Je suis disponible ».");
+  L.push("","👉 Pour vous inscrire, ouvrez le lien de l'action et cliquez sur « Je suis disponible ».");
   return L.join("\n");
 }
 function count(a){return avail.filter(x=>x.a===a.id).length;}
