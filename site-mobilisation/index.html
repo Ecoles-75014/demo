@@ -298,6 +298,25 @@ V.welcome=()=>`<div class="login card" style="text-align:left">
     <div class="row" style="margin-top:14px"><button class="primary" type="submit">Voir les actions</button></div></form></div>`;
 
 // ---------- actions ----------
+let recSector="";
+function recapText(sec){
+  const from=addDays(0), to=addDays(6), cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+  const ML=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  const longDate=iso=>{const x=d(iso);return JOURS[x.getDay()]+" "+x.getDate()+NB+ML[x.getMonth()];};
+  const rows=actions.filter(a=>a.date>=from&&a.date<=to&&(!sec||a.sector===sec||!a.sector)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||"")));
+  const L=["*Actions à venir – "+(sec?"secteur "+sec:"tous secteurs")+"*","Du "+longDate(from)+" au "+longDate(to)];
+  if(!rows.length){L.push("","Aucune action prévue pour le moment. Proposez-en une : "+SITE+"/proposer");return L.join("\n");}
+  let day=null;
+  rows.forEach(a=>{
+    if(a.date!==day){day=a.date;L.push("","*"+cap(longDate(day))+"*");}
+    const head=horaire(a)+" · "+(a.title.toLowerCase().startsWith(a.type.toLowerCase())?a.title:a.type+" – "+a.title);
+    if(a.status==="cancelled"){L.push("• ~"+head+"~ (annulée)");return;}
+    const n=count(a), need=a.needed||0;
+    L.push("• "+head,"   Lieu : "+a.place,"   "+(need&&n<need?n+" inscrit"+(n>1?"s":"")+" sur "+need+" : *il manque "+(need-n)+NB+"personne"+(need-n>1?"s":"")+"*":need?"Complet ("+n+" inscrit"+(n>1?"s":"")+")":n?n+" inscrit"+(n>1?"s":""):"Pas encore d'inscrit"),"   "+actionUrl(a));
+  });
+  L.push("","Pour vous inscrire, ouvrez le lien de l'action et cliquez sur « Je suis disponible ».");
+  return L.join("\n");
+}
 function count(a){return avail.filter(x=>x.a===a.id).length;}
 const isPast=a=>a.date<addDays(0);
 function myComment(a){return (avail.find(x=>x.a===a.id&&x.u===me.id)||{}).c||"";}
@@ -453,6 +472,11 @@ V.admin=()=>{
       <select data-act="role" data-u="${u.id}" ${u.id===me.id||(u.role==="admin"&&!isAdmin())?"disabled":""}>${[["member","Membre"],["moderator","Modérateur"],["admin","Administrateur"]].filter(([k])=>k!=="admin"||isAdmin()||u.role==="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${l}</option>`).join("")}</select>
       ${u.id!==me.id&&u.role!=="admin"?`<button class="link small" data-act="block" data-u="${u.id}">Retirer l'accès</button>`:""}</td></tr>`).join("")}</table>
     <p class="small muted">«${NB}Retirer l'accès${NB}» remet le compte en attente, par exemple pour une personne arrivée par un lien qui aurait fuité.</p></div>
+  <div class="card"><h2>Message WhatsApp</h2><p class="small muted">Les actions des 7 prochains jours, mises en forme pour un groupe WhatsApp, avec les besoins en personnes et les liens d'inscription. Sans nom ni numéro de téléphone.</p>
+    <div class="filters"><label class="small">Secteur&nbsp;: <select id="recsec"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===recSector?"selected":""}>${s}</option>`).join("")}</select></label></div>
+    <textarea readonly rows="14" style="display:block;width:100%;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;margin-top:8px">${esc(recapText(recSector))}</textarea>
+    <div class="row" style="margin-top:10px"><button class="primary" data-act="copyrecap">Copier le message</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(recapText(recSector))}">Ouvrir dans WhatsApp</a></div>
+    <p class="hint">Les *astérisques* s'affichent en gras et les ~tildes~ barrent le texte dans WhatsApp.</p></div>
   <div class="card"><h2>Récapitulatif</h2><p class="small muted">Sur le site réel, ce bouton télécharge un fichier CSV (ouvrable dans Excel) de toutes les actions à venir avec leurs inscrits, pour le diffuser dans les groupes WhatsApp.</p>
     <button data-act="csv">Exporter le récapitulatif</button></div>`;
 };
@@ -551,6 +575,7 @@ function render(){
   document.getElementById("main").innerHTML=(V[view]||V.list)();
   stackTables(document.getElementById("main"));
   header();
+  const rs=document.getElementById("recsec"); if(rs) rs.onchange=()=>{recSector=rs.value;render();};
   const fs=document.getElementById("fs"), ft=document.getElementById("ft");
   if(fs) fs.onchange=()=>{fSector=fs.value;render();};
   if(ft) ft.onchange=()=>{fType=ft.value;render();};
@@ -617,6 +642,7 @@ document.addEventListener("click",e=>{
     dlg.onclose=()=>{if(dlg.returnValue==="ok"){signUp(a,document.getElementById("dispotxt").value.trim());render();}};
     dlg.returnValue="";dlg.showModal();document.getElementById("dispotxt").focus();return;}
   if(act==="quitref"){if(!confirmClick(b,"quitref","Confirmer : ne plus être référent"))return;const x=schoolById(param);x.ref=null;x.consent=false;x.upd=addDays(0);toast("Vous n'êtes plus référent de "+x.n);render();return;}
+  if(act==="copyrecap"){const t=recapText(recSector);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toast("Message copié"),()=>window.prompt("Copiez le texte :",t));else window.prompt("Copiez le texte :",t);return;}
   if(act==="edit"){go("edit",aid);return;}
   if(act==="dup"){prefill=Object.assign({},a,{date:[nextDay(a.date),addDays(1)].sort()[1],id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
