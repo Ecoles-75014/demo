@@ -168,14 +168,14 @@ const schoolSelect=(name,v,emptyLabel,onlySector)=>`<select name="${name}" id="s
 // ---------- données fictives ----------
 const NOTIF_DEFAULT={inscrits:true,changes:true,rappel:true};
 let users=[
-  {id:1,name:"Camille",email:"camille.demo@gmail.com",phone:"06 00 00 00 01",school:"La Gare (primaire)",role:"member",notif:{...NOTIF_DEFAULT}},
-  {id:2,name:"Nadia",email:"nadia.demo@gmail.com",phone:"06 00 00 00 02",school:"Le Moulin (mat.)",role:"moderator",notif:{...NOTIF_DEFAULT}},
-  {id:3,name:"Julien",email:"julien.demo@gmail.com",phone:"06 00 00 00 03",school:"Les Tilleuls (élém.)",role:"member",notif:{...NOTIF_DEFAULT}},
-  {id:4,name:"Sofia",email:"sofia.demo@gmail.com",phone:"",school:"Le Parc (mat.)",role:"member",notif:{...NOTIF_DEFAULT}},
-  {id:5,name:"Thomas",email:"thomas.demo@gmail.com",phone:"",school:"Les Peupliers (élém.)",role:"member",notif:{...NOTIF_DEFAULT}},
-  {id:6,name:"Inès",email:"ines.demo@gmail.com",phone:"",school:"",role:"pending",notif:{...NOTIF_DEFAULT}},
-  {id:7,name:"Marc",email:"marc.demo@gmail.com",phone:"",school:"Victor Hugo (élém.)",role:"pending",notif:{...NOTIF_DEFAULT}},
-  {id:8,name:"Alex",email:"admin.demo@gmail.com",phone:"",school:"La Gare (primaire)",role:"admin",notif:{...NOTIF_DEFAULT}}
+  {id:1,name:"Camille D.",first:"Camille",last:"Durand",email:"camille.demo@gmail.com",phone:"06 00 00 00 01",school:"La Gare (primaire)",role:"member",notif:{...NOTIF_DEFAULT}},
+  {id:2,name:"Nadia B.",first:"Nadia",last:"Benali",email:"nadia.demo@gmail.com",phone:"06 00 00 00 02",school:"Le Moulin (mat.)",role:"moderator",notif:{...NOTIF_DEFAULT}},
+  {id:3,name:"Julien M.",first:"Julien",last:"Moreau",email:"julien.demo@gmail.com",phone:"06 00 00 00 03",school:"Les Tilleuls (élém.)",role:"member",notif:{...NOTIF_DEFAULT}},
+  {id:4,name:"Sofia L.",first:"Sofia",last:"Lopes",email:"sofia.demo@gmail.com",phone:"",school:"Le Parc (mat.)",role:"member",notif:{...NOTIF_DEFAULT}},
+  {id:5,name:"Thomas P.",first:"Thomas",last:"Petit",email:"thomas.demo@gmail.com",phone:"",school:"Les Peupliers (élém.)",role:"member",notif:{...NOTIF_DEFAULT}},
+  {id:6,name:"Inès H.",first:"Inès",last:"Haddad",email:"ines.demo@gmail.com",phone:"",school:"",role:"pending",notif:{...NOTIF_DEFAULT}},
+  {id:7,name:"Marc L.",first:"Marc",last:"Leroy",email:"marc.demo@gmail.com",phone:"",school:"Victor Hugo (élém.)",role:"pending",notif:{...NOTIF_DEFAULT}},
+  {id:8,name:"Alex M.",first:"Alex",last:"Martin",email:"admin.demo@gmail.com",phone:"",school:"La Gare (primaire)",role:"admin",notif:{...NOTIF_DEFAULT}}
 ];
 // Fiches de démonstration : deux référents, dont un seul a accepté d'afficher son numéro.
 Object.assign(schools.find(x=>x.n==="Le Moulin (mat.)"),{ref:2,consent:true,depot:"Local du collectif, à côté du marché",notes:"Tracts disponibles le lundi soir.",upd:addDays(-2)});
@@ -184,20 +184,22 @@ const schoolById=id=>schools.find(x=>x.id===id);
 const refPhone=x=>{const r=x.ref&&userById(x.ref);return r&&x.consent&&r.phone?r.phone:"";};
 const telLink=t=>`<a href="tel:${esc(t.replace(/[^0-9+]/g,""))}">${esc(t)}</a>`;
 let actions=[
-  {id:1,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à l'entrée de l'école de la Gare",place:"Devant l'école de la Gare",sector:"Sud",date:addDays(2),start:"08:20",end:"08:50",needed:4,desc:"Tracts à récupérer chez Nadia la veille.",status:"open"},
-  {id:2,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Tournée d'affichage avenue des Tilleuls",place:"Commerces de l'avenue des Tilleuls",sector:"Nord",date:addDays(3),start:"17:00",end:"19:00",needed:3,desc:"20 affiches A3 et du scotch fournis.",status:"open"},
-  {id:3,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Présence au groupe de travail",title:"Réunion de concertation du secteur Sud",place:"Préau de l'école du Moulin",sector:"Sud",date:addDays(5),start:"18:30",end:"",needed:null,desc:"Venir nombreux. Participer n'engage pas à endosser les résultats.",status:"open"},
-  {id:4,by:4,name:"Sofia",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant la mairie",place:"Place de la mairie",sector:"",date:addDays(9),start:"",end:"",needed:null,desc:"Horaire à confirmer.",status:"open"},
-  {id:5,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Tractage",title:"Tractage au marché du samedi",place:"Marché de la place du Parc",sector:"Nord",date:addDays(4),start:"10:00",end:"12:00",needed:3,desc:"",status:"cancelled",cancelMsg:"Reporté à cause de la pluie annoncée."},
-  {id:6,by:2,name:"Nadia",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à la sortie de l'école du Moulin",place:"Devant l'école du Moulin",sector:"Sud",date:addDays(-3),start:"16:30",end:"17:00",needed:4,desc:"",status:"open"},
-  {id:7,by:3,name:"Julien",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Affichage dans les commerces du quartier Nord",place:"Rue du Parc",sector:"Nord",date:addDays(-6),start:"18:00",end:"19:30",needed:3,desc:"",status:"open"},
-  {id:8,by:4,name:"Sofia",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant le rectorat",place:"Parvis du rectorat",sector:"",date:addDays(-10),start:"12:00",end:"",needed:null,desc:"",status:"cancelled",cancelMsg:"Remplacé par une délégation reçue en audience."}
+  {id:1,by:2,name:"Nadia B.",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à l'entrée de l'école de la Gare",place:"Devant l'école de la Gare",sector:"Sud",date:addDays(2),start:"08:20",end:"08:50",needed:4,desc:"Tracts à récupérer chez Nadia la veille.",status:"open"},
+  {id:2,by:3,name:"Julien M.",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Tournée d'affichage avenue des Tilleuls",place:"Commerces de l'avenue des Tilleuls",sector:"Nord",date:addDays(3),start:"17:00",end:"19:00",needed:3,desc:"20 affiches A3 et du scotch fournis.",status:"open"},
+  {id:3,by:2,name:"Nadia B.",phone:"06 00 00 00 02",consent:true,type:"Présence au groupe de travail",title:"Réunion de concertation du secteur Sud",place:"Préau de l'école du Moulin",sector:"Sud",date:addDays(5),start:"18:30",end:"",needed:null,desc:"Venir nombreux. Participer n'engage pas à endosser les résultats.",status:"open"},
+  {id:4,by:4,name:"Sofia L.",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant la mairie",place:"Place de la mairie",sector:"",date:addDays(9),start:"",end:"",needed:null,desc:"Horaire à confirmer.",status:"open"},
+  {id:5,by:3,name:"Julien M.",phone:"06 00 00 00 03",consent:false,type:"Tractage",title:"Tractage au marché du samedi",place:"Marché de la place du Parc",sector:"Nord",date:addDays(4),start:"10:00",end:"12:00",needed:3,desc:"",status:"cancelled",cancelMsg:"Reporté à cause de la pluie annoncée."},
+  {id:6,by:2,name:"Nadia B.",phone:"06 00 00 00 02",consent:true,type:"Tractage",title:"Tractage à la sortie de l'école du Moulin",place:"Devant l'école du Moulin",sector:"Sud",date:addDays(-3),start:"16:30",end:"17:00",needed:4,desc:"",status:"open"},
+  {id:7,by:3,name:"Julien M.",phone:"06 00 00 00 03",consent:false,type:"Affichage",title:"Affichage dans les commerces du quartier Nord",place:"Rue du Parc",sector:"Nord",date:addDays(-6),start:"18:00",end:"19:30",needed:3,desc:"",status:"open"},
+  {id:8,by:4,name:"Sofia L.",phone:"",consent:false,type:"Rassemblement",title:"Rassemblement devant le rectorat",place:"Parvis du rectorat",sector:"",date:addDays(-10),start:"12:00",end:"",needed:null,desc:"",status:"cancelled",cancelMsg:"Remplacé par une délégation reçue en audience."}
 ];
 let avail=[{a:1,u:3,c:"Je peux apporter 50 tracts de plus."},{a:1,u:5},{a:2,u:4},{a:3,u:3},{a:3,u:4},{a:3,u:5},{a:5,u:4},{a:6,u:1},{a:6,u:3},{a:6,u:5},{a:7,u:3},{a:7,u:4}];
 let mails=[];
 
 // ---------- état ----------
 let me=null, view="login", param=null, fSector="", fType="", otp=null, flash={}, pendingInvite=null, prefill=null;
+const pubName=(f,l)=>{f=(f||"").trim();l=(l||"").trim();return l?f+" "+l.charAt(0).toUpperCase()+".":f;};
+const fullName=u=>((u.first||"")+" "+(u.last||"")).trim()||u.name;
 const isMember=()=>me&&me.role!=="pending";
 const isMod=()=>me&&(me.role==="moderator"||me.role==="admin");
 const isAdmin=()=>me&&me.role==="admin";
@@ -281,7 +283,8 @@ V.otp=()=>{const o=otp;if(!o) return V.login();
   <p class="small muted">Le code est valable 10${NB}minutes (encore ${left}${NB}min). Pensez à regarder dans les courriers indésirables.</p>
   <form id="otpf">
     <input name="code" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••">
-    <label>Votre prénom ou nom <span class="muted small">(seulement à la première connexion)</span></label><input name="name" autocomplete="given-name">
+    <p class="small muted" style="margin-top:12px">Première connexion${NB}: indiquez aussi votre prénom et votre nom. Les autres membres ne verront que votre prénom et l'initiale de votre nom.</p>
+    <div class="row"><div style="flex:1;min-width:120px"><label>Prénom</label><input name="first" autocomplete="given-name"></div><div style="flex:1;min-width:120px"><label>Nom</label><input name="last" autocomplete="family-name"></div></div>
     ${flash.err?`<p class="err">${esc(flash.err)}</p>`:""}
     <div class="row" style="margin-top:14px"><button class="primary" type="submit">Valider</button><span class="spacer"></span><button type="button" class="link" data-act="resend">Renvoyer un code</button><button type="button" class="link" data-go="login">Changer d'adresse</button></div>
   </form>
@@ -291,14 +294,14 @@ V.pending=()=>`<div class="login card">
   <h1>Compte en attente de validation</h1>
   <p>Bonjour ${esc(me.name)}. Votre adresse (${esc(me.email)}) est confirmée.</p>
   <p class="muted">Un responsable de secteur doit valider votre compte avant que vous puissiez voir les actions. Si l'on vous a envoyé le lien d'invitation de votre secteur, utilisez-le&nbsp;: le compte est alors validé tout de suite.</p>
-  <form id="acc" style="text-align:left"><input type="hidden" name="name" value="${esc(me.name)}"><input type="hidden" name="phone" value="${esc(me.phone)}">
+  <form id="acc" style="text-align:left"><input type="hidden" name="first" value="${esc(me.first)}"><input type="hidden" name="last" value="${esc(me.last)}"><input type="hidden" name="phone" value="${esc(me.phone)}">
     <label>En attendant, indiquez votre établissement</label>${schoolSelect("school",me.school,"Choisir un établissement")}
     <p class="hint" id="sec-hint">${me.school?`Secteur&nbsp;: ${secTag(sectorOf(me.school))}`:"Le secteur sera déduit de l'établissement, et le responsable de ce secteur sera prévenu."}</p>
     <div class="row" style="margin-top:10px"><button class="primary" type="submit">Enregistrer</button></div></form></div>`;
 V.welcome=()=>`<div class="login card" style="text-align:left">
   <h1>Bienvenue, ${esc(me.name)}</h1>
   <p>Votre compte est validé grâce au lien d'invitation du secteur ${secTag(me.inviteSector)}.</p>
-  <form id="acc"><input type="hidden" name="name" value="${esc(me.name)}">
+  <form id="acc"><input type="hidden" name="first" value="${esc(me.first)}"><input type="hidden" name="last" value="${esc(me.last)}">
     <label>Votre établissement</label>${schoolSelect("school",me.school,"Choisir un établissement",me.inviteSector)}
     <p class="hint">Seuls les établissements du secteur ${esc(me.inviteSector)} sont proposées. Vous pourrez changer plus tard dans «${NB}Mon compte${NB}».</p>
     <label>Téléphone (facultatif)</label><input name="phone" type="tel" placeholder="06 12 34 56 78">
@@ -461,7 +464,8 @@ V.mine=()=>{
   <h1 style="margin-top:24px">Actions dont je suis responsable</h1>${prop.length?prop.map(actionCard).join(""):`<p class="muted">Vous n'êtes responsable d'aucune action.</p>`}`;
 };
 V.account=()=>`<h1>Mon compte</h1><form id="acc" class="card">
-  <label>Nom affiché</label><input name="name" required value="${esc(me.name)}">
+  <div class="row"><div style="flex:1;min-width:120px"><label>Prénom</label><input name="first" required value="${esc(me.first)}"></div><div style="flex:1;min-width:120px"><label>Nom</label><input name="last" required value="${esc(me.last)}"></div></div>
+  <p class="hint">Affiché aux autres membres sous la forme «${NB}${esc(me.name)}${NB}» (prénom et initiale du nom). Les responsables voient votre nom complet.</p>
   <label>Téléphone (prérempli quand vous proposez une action)</label><input name="phone" type="tel" value="${esc(me.phone)}">
   <label>Votre établissement</label>${schoolSelect("school",me.school,"Non précisée")}
   <p class="hint" id="sec-hint">${me.school?`Secteur&nbsp;: ${secTag(sectorOf(me.school))}`:"Le secteur sera déduit de l'établissement."}</p>
@@ -479,10 +483,10 @@ V.admin=()=>{
   return `<h1>Modération</h1>
   <p class="muted small">Les modérateurs (responsables de secteur) valident les comptes arrivés sans lien d'invitation, modifient, annulent ou suppriment les actions, et peuvent nommer d'autres modérateurs. Les administrateurs gèrent en plus les paramètres et les liens d'invitation.</p>
   <div class="card"><h2>Comptes en attente (${pend.length})</h2>
-    ${pend.length?`<table><tr><th>Nom</th><th>Adresse</th><th>Établissement</th><th></th></tr>${pend.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${u.school?esc(u.school)+" "+secTag(sectorOf(u.school)):`<span class="muted small">Non précisée</span>`}</td><td class="row"><button class="ok" data-act="approve" data-u="${u.id}">Valider</button><button class="link" data-act="refuse" data-u="${u.id}">Refuser</button></td></tr>`).join("")}</table>`:`<p class="muted">Aucun compte en attente.</p>`}
+    ${pend.length?`<table><tr><th>Nom</th><th>Adresse</th><th>Établissement</th><th></th></tr>${pend.map(u=>`<tr><td>${esc(fullName(u))}</td><td>${esc(u.email)}</td><td>${u.school?esc(u.school)+" "+secTag(sectorOf(u.school)):`<span class="muted small">Non précisée</span>`}</td><td class="row"><button class="ok" data-act="approve" data-u="${u.id}">Valider</button><button class="link" data-act="refuse" data-u="${u.id}">Refuser</button></td></tr>`).join("")}</table>`:`<p class="muted">Aucun compte en attente.</p>`}
     ${mySec&&!isAdmin()?`<p class="small muted">Pour éviter d'avoir à valider chaque compte, partagez le lien d'invitation du secteur ${esc(mySec)} dans son groupe WhatsApp. Demandez-le à un administrateur.</p>`:""}</div>
   <div class="card"><h2>Membres (${others.length})</h2><table><tr><th>Nom</th><th>Établissement</th><th>Arrivé par</th><th>Rôle</th></tr>
-    ${others.map(u=>`<tr><td>${esc(u.name)}<div class="small muted">${esc(u.email)}</div></td><td>${isAdmin()?`<select data-act="usersch" data-u="${u.id}"><option value="">Non précisé</option>${SECTORS.map(s=>`<optgroup label="Secteur ${esc(s)}">${schools.filter(x=>x.s===s).sort((a,b)=>a.n.localeCompare(b.n,"fr")).map(x=>`<option ${x.n===u.school?"selected":""}>${esc(x.n)}</option>`).join("")}</optgroup>`).join("")}</select> `:esc(u.school)+" "}${secTag(sectorOf(u.school))}</td><td class="small">${u.inviteSector?"Lien "+esc(u.inviteSector):"Validation"}</td><td>
+    ${others.map(u=>`<tr><td>${esc(fullName(u))}<div class="small muted">${esc(u.email)}${u.name!==fullName(u)?` · affiché «${NB}${esc(u.name)}${NB}»`:""}</div>${isAdmin()?`<details><summary class="small" style="cursor:pointer;color:var(--muted)">Corriger le nom</summary><form class="namefix row" data-u="${u.id}" style="margin-top:6px;flex-wrap:nowrap"><input name="first" required value="${esc(u.first||"")}" placeholder="Prénom" style="min-width:0"><input name="last" required value="${esc(u.last||"")}" placeholder="Nom" style="min-width:0"><button type="submit">OK</button></form></details>`:""}</td><td>${isAdmin()?`<select data-act="usersch" data-u="${u.id}"><option value="">Non précisé</option>${SECTORS.map(s=>`<optgroup label="Secteur ${esc(s)}">${schools.filter(x=>x.s===s).sort((a,b)=>a.n.localeCompare(b.n,"fr")).map(x=>`<option ${x.n===u.school?"selected":""}>${esc(x.n)}</option>`).join("")}</optgroup>`).join("")}</select> `:esc(u.school)+" "}${secTag(sectorOf(u.school))}</td><td class="small">${u.inviteSector?"Lien "+esc(u.inviteSector):"Validation"}</td><td>
       <select data-act="role" data-u="${u.id}" ${u.id===me.id||(u.role==="admin"&&!isAdmin())?"disabled":""}>${[["member","Membre"],["moderator","Modérateur"],["admin","Administrateur"]].filter(([k])=>k!=="admin"||isAdmin()||u.role==="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${l}</option>`).join("")}</select>
       ${u.id!==me.id&&u.role!=="admin"?`<button class="link small" data-act="block" data-u="${u.id}">Retirer l'accès</button>`:""}</td></tr>`).join("")}</table>
     ${isAdmin()?`<p class="small muted">Le secteur d'une personne est celui de son établissement${NB}: pour la changer de secteur, choisissez un établissement de l'autre secteur.</p>`:""}
@@ -609,7 +613,7 @@ function render(){
     if(Date.now()>o.exp){flash={err:"Ce code a expiré. Demandez-en un nouveau."};render();return;}
     if(v.code!==o.code){o.tries++;if(o.tries>=5){flash={err:"Trop d'essais : ce code est annulé. Demandez-en un nouveau."};o.code="------";}else flash={err:"Code incorrect ("+(5-o.tries)+" essai(s) restant(s))."};render();return;}
     let u=users.find(x=>x.email===o.email);
-    if(!u){u={id:Math.max(...users.map(x=>x.id))+1,name:(v.name||"").trim()||o.email.split("@")[0],email:o.email,phone:"",school:"",role:"pending",notif:{...NOTIF_DEFAULT}};users.push(u);}
+    if(!u){const f=(v.first||"").trim()||o.email.split("@")[0],l=(v.last||"").trim();u={id:Math.max(...users.map(x=>x.id))+1,name:pubName(f,l),first:f,last:l,email:o.email,phone:"",school:"",role:"pending",notif:{...NOTIF_DEFAULT}};users.push(u);}
     otp=null;me=u;
     if(pendingInvite&&u.role==="pending"){u.role="member";u.inviteSector=pendingInvite;invites[pendingInvite].used++;pendingInvite=null;go("welcome");return;}
     pendingInvite=null;toast("Connecté");go(u.role==="pending"?"pending":"list");});
@@ -622,7 +626,7 @@ function render(){
     if(rep===7){const x=d(rec.date);x.setDate(x.getDate()+7);dates.push(isoOf(x));}
     let first=null;dates.forEach(dt=>{const id=Math.max(0,...actions.map(a=>a.id))+1;actions.push(Object.assign({id,by:me.id,status:"open"},rec,{date:dt}));if(!first)first=id;});
     prefill=null;toast(dates.length>1?dates.length+" actions publiées":"Action publiée");go("detail",first);});
-  on("acc",v=>{me.name=v.name;if(v.phone!==undefined)me.phone=v.phone;me.school=v.school;
+  on("acc",v=>{if(v.first!==undefined){const f=(v.first||"").trim(),l=(v.last||"").trim();if(!f||!l){toast("Indiquez votre prénom et votre nom");return;}me.first=f;me.last=l;me.name=pubName(f,l);}if(v.phone!==undefined)me.phone=v.phone;me.school=v.school;
     if("n_inscrits" in v||document.querySelector('[name="n_inscrits"]')) me.notif={inscrits:!!v.n_inscrits,changes:!!v.n_changes,rappel:!!v.n_rappel};
     if(view==="pending"&&v.school){const mods=users.filter(u=>u.role==="moderator"&&sectorOf(u.school)===sectorOf(v.school));mods.forEach(m=>sendMail(m,"Nouveau compte à valider : "+me.name,me.name+" ("+me.email+") attend la validation de son compte pour l'établissement "+v.school+".\n"+SITE+"/moderation"));}
     toast("Enregistré");go(view==="welcome"?"list":view);});
@@ -648,6 +652,8 @@ function render(){
   const sch=document.getElementById("sel-school"), hint=document.getElementById("sec-hint");
   if(sch&&hint) sch.onchange=()=>{hint.innerHTML=sch.value?"Secteur"+NB+": "+secTag(sectorOf(sch.value)):"Le secteur sera déduit de l'établissement.";};
   document.querySelectorAll('select[data-act="role"]').forEach(s=>s.onchange=()=>{userById(Number(s.dataset.u)).role=s.value;toast("Rôle modifié");});
+  document.querySelectorAll("form.namefix").forEach(f=>f.onsubmit=e=>{e.preventDefault();const u=userById(Number(f.dataset.u)),fd=new FormData(f),fi=fd.get("first").trim(),la=fd.get("last").trim();if(!fi||!la)return;
+    u.first=fi;u.last=la;u.name=pubName(fi,la);toast("Nom corrigé : "+fi+" "+la+" (affiché « "+u.name+" » aux membres)");render();});
   document.querySelectorAll("form.renf").forEach(f=>f.onsubmit=e=>{e.preventDefault();const x=schoolById(Number(f.dataset.id)),n=new FormData(f).get("n").trim();
     if(!n||n===x.n){render();return;} if(schools.some(y=>y.n===n)){toast("Ce nom existe déjà");return;}
     users.forEach(u=>{if(u.school===x.n)u.school=n;}); x.n=n; toast("Établissement renommé : "+n); render();});
