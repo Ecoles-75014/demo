@@ -249,7 +249,7 @@ function header(){
   const nav=document.getElementById("nav"), who=document.getElementById("who");
   if(!isMember()) nav.innerHTML="";
   else {
-    const items=[["list","Actions"],["schools","Établissements"],["new","Proposer une action"],["mine","Mes actions"],["account","Mon compte"]];
+    const items=[["list","Actions"],["schools","Établissements"],["kit","Kit de mobilisation"],["new","Proposer une action"],["mine","Mes actions"],["account","Mon compte"]];
     if(isMod()) items.push(["admin","Modération"]);
     if(isAdmin()) items.push(["settings","Paramètres"]);
     nav.innerHTML=items.map(([k,l])=>`<a href="#" data-go="${k}" class="${view===k||((view==="detail"||view==="past")&&k==="list")||(view==="edit"&&k==="new")||(view==="school"&&k==="schools")?"on":""}">${l}</a>`).join("");
@@ -571,6 +571,30 @@ V.school=()=>{
   </div>
   <h2>Prochaines actions du secteur</h2>${next.length?next.map(actionCard).join(""):`<p class="muted">Aucune action à venir.</p>`}`;
 };
+let kitDocs=[
+  {id:1,title:"Affiche de la mobilisation",kind:"Affiche",sector:"",desc:"A3 couleur, recto seul.",type:"PDF",size:"1,2 Mo",url:"",by:"Nadia B.",date:addDays(-3)},
+  {id:2,title:"Flyer réunion publique",kind:"Flyer",sector:"Sud",desc:"A5, 2 par page A4, noir et blanc.",type:"PDF",size:"420 Ko",url:"",by:"Nadia B.",date:addDays(-1)},
+  {id:3,title:"Flyer tractage du marché",kind:"Flyer",sector:"Nord",desc:"",type:"PDF",size:"380 Ko",url:"",by:"Alex M.",date:addDays(-2)}];
+let kitSector=null;
+V.kit=()=>{
+  const sec=kitSector===null?sectorOf(me.school):kitSector, KINDS=["Affiche","Flyer","Autre"];
+  const docs=kitDocs.filter(d=>!sec||!d.sector||d.sector===sec).sort((a,b)=>KINDS.indexOf(a.kind)-KINDS.indexOf(b.kind)||b.date.localeCompare(a.date));
+  return `<h1>Kit de mobilisation</h1><p class="muted small">Affiches et flyers prêts à imprimer, déposés par les responsables de secteur. Ces fichiers ne sont accessibles qu'aux membres connectés.</p>
+  <div class="filters"><label class="small">Secteur${NB}: <select id="kitsec"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===sec?"selected":""}>${s}</option>`).join("")}</select></label></div>
+  ${isMod()?`<details class="card"><summary style="cursor:pointer"><strong>Déposer une affiche ou un flyer</strong></summary><form id="kitf" style="margin-top:10px">
+    <label>Fichier</label><input name="file" type="file" required accept="application/pdf,image/png,image/jpeg,image/webp"><p class="hint">PDF de préférence pour l'impression, ou image PNG, JPEG ou WebP. 20${NB}Mo au plus.</p>
+    <div class="row"><div style="flex:1;min-width:160px"><label>Titre</label><input name="title" placeholder="Repris du nom du fichier si vide"></div><div><label>Type</label><select name="kind">${KINDS.map(k=>`<option>${k}</option>`).join("")}</select></div></div>
+    <label>Secteur</label><select name="sector"><option value="">Tous secteurs</option>${SECTORS.map(s=>`<option>${s}</option>`).join("")}</select>
+    <label>Consignes d'impression (facultatif)</label><input name="desc" placeholder="A3 couleur, recto seul, 50 exemplaires par école…">
+    <p class="hint">Pas de photo ni de dessin d'enfant sans l'accord écrit des parents, et aucun logo d'institution.</p>
+    <div class="row" style="margin-top:10px"><button class="primary" type="submit">Déposer</button></div></form></details>`:""}
+  ${docs.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">${docs.map(d=>`<div class="card" style="margin:0;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;align-items:center;justify-content:center;height:150px;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden;color:var(--muted);font-weight:700;font-size:1.4rem">${d.img?`<img src="${d.url}" alt="" style="max-width:100%;max-height:100%;object-fit:contain">`:d.type}</div>
+    <div class="row" style="gap:6px"><span class="tag t-type">${esc(d.kind)}</span>${secTag(d.sector)||'<span class="tag t-type">Tous secteurs</span>'}</div>
+    <h3 style="margin:4px 0 0;font-size:1rem">${esc(d.title)}</h3>${d.desc?`<p class="small" style="margin:0">${esc(d.desc)}</p>`:""}
+    <p class="small muted" style="margin:0">${d.type} · ${d.size} · ${esc(longDate(d.date))} · ${esc(d.by)}</p>
+    <div class="row" style="margin-top:auto"><button class="primary" data-act="kitdl" data-k="${d.id}">Télécharger</button>${isMod()?`<button class="link" data-act="kitdel" data-k="${d.id}">Supprimer</button>`:""}</div></div>`).join("")}</div>`:`<p class="muted">Aucun document pour ce secteur pour le moment.</p>`}`;
+};
 V.privacy=()=>`<p><a href="#" data-go="${isMember()?"list":"login"}">← Retour</a></p><div class="card"><h1>Confidentialité et mentions légales</h1>
   <p class="muted small">Texte à compléter et à faire valider par un juriste.</p>
   <h2>Données collectées</h2><p>Nom, adresse e-mail, établissement, téléphone si vous le renseignez, actions proposées et disponibilités. Le numéro d'un proposant n'est affiché aux membres validés qu'avec son accord, de même que celui du référent d'un établissement, qui peut retirer cet accord à tout moment. Aucun mot de passe n'est enregistré&nbsp;: la connexion se fait par un code envoyé par e-mail.</p>
@@ -646,6 +670,13 @@ function render(){
   const lf=document.getElementById("logofile"); if(lf) lf.onchange=()=>{const f=lf.files[0]; if(!f) return;
     if(!["image/png","image/jpeg","image/webp"].includes(f.type)||f.size>2*1024*1024){toast("Choisissez une image PNG, JPEG ou WebP de 2 Mo au plus");return;}
     const r=new FileReader(); r.onload=()=>{siteLogo=r.result;applyBrand();toast("Logo enregistré");render();}; r.readAsDataURL(f);};
+  const ks=document.getElementById("kitsec"); if(ks) ks.onchange=()=>{kitSector=ks.value;render();};
+  on("kitf",(v,f)=>{const file=f.querySelector("input[type=file]").files[0]; if(!file) return;
+    const ok={"application/pdf":"PDF","image/png":"PNG","image/jpeg":"JPEG","image/webp":"WEBP"}[file.type];
+    if(!ok||file.size>20*1024*1024){toast("Format refusé : déposez un PDF ou une image PNG, JPEG ou WebP de 20 Mo au plus");return;}
+    const size=file.size>=1048576?(file.size/1048576).toFixed(1).replace(".",",")+NB+"Mo":Math.max(1,Math.round(file.size/1024))+NB+"Ko";
+    kitDocs.push({id:Math.max(0,...kitDocs.map(d=>d.id))+1,title:(v.title||"").trim()||file.name.replace(/\.[^.]+$/,""),kind:v.kind,sector:v.sector,desc:(v.desc||"").trim(),type:ok,size,url:URL.createObjectURL(file),img:ok!=="PDF",by:me.name,date:addDays(0)});
+    toast("Document ajouté au kit");render();});
   on("secf",v=>{const s=v.s.trim();if(s&&!SECTORS.includes(s)){SECTORS.push(s);invites[s]={token:token(),since:addDays(0),used:0};toast("Secteur ajouté, avec son lien d'invitation");}render();});
   on("schf",v=>{const n=v.n.trim();if(n&&!schools.some(x=>x.n===n)){schools.push({n,s:v.s,id:Math.max(0,...schools.map(x=>x.id))+1,ref:null,consent:false,depot:"",notes:"",upd:""});toast("Établissement ajouté");}render();});
   on("typef",v=>{const t=v.t.trim();if(t&&!TYPES.includes(t)){TYPES.push(t);toast("Type ajouté");}render();});
@@ -681,6 +712,8 @@ document.addEventListener("click",e=>{
   if(act==="quitref"){if(!confirmClick(b,"quitref","Confirmer : ne plus être référent"))return;const x=schoolById(param);x.ref=null;x.consent=false;x.upd=addDays(0);toast("Vous n'êtes plus référent de "+x.n);render();return;}
   if(act==="copyrecap"){const t=recapText(recSector);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toast("Message copié"),()=>window.prompt("Copiez le texte :",t));else window.prompt("Copiez le texte :",t);return;}
   if(act==="dellogo"){siteLogo="";applyBrand();toast("Logo retiré");render();return;}
+  if(act==="kitdl"){const d=kitDocs.find(x=>x.id===Number(b.dataset.k)); if(d&&d.url) window.open(d.url,"_blank"); else toast("Démonstration : sur le site réel, le fichier est téléchargé"); return;}
+  if(act==="kitdel"){if(!confirmClick(b,"kitdel"+b.dataset.k,"Confirmer la suppression"))return;kitDocs=kitDocs.filter(x=>x.id!==Number(b.dataset.k));toast("Document supprimé");render();return;}
   if(act==="edit"){go("edit",aid);return;}
   if(act==="dup"){prefill=Object.assign({},a,{date:[nextDay(a.date),addDays(1)].sort()[1],id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
