@@ -493,9 +493,10 @@ V.settings=()=>`<h1>Paramètres</h1><p class="muted">Réservé aux administrateu
     <form id="secf" class="row" style="margin-top:10px;align-items:flex-end"><div><label>Nouveau secteur</label><input name="s" required placeholder="Centre" style="width:120px"></div><button type="submit">Ajouter</button></form>
     <p class="hint">Un lien d'invitation est créé automatiquement pour chaque nouveau secteur.</p></div>
   <div class="card"><h2>Établissements (${schools.length})</h2>
-    <p class="small muted">Changer un établissement de secteur met à jour le secteur de tous les comptes qui y sont rattachés.</p>
+    <p class="small muted">Changer un établissement de secteur met à jour le secteur de tous les comptes qui y sont rattachés. Le renommer ne change rien d'autre : comptes, référent et fiche sont conservés.</p>
     <table><tr><th>Établissement</th><th>Secteur</th><th>Comptes</th><th></th></tr>${[...schools].sort((a,b)=>a.s.localeCompare(b.s)||a.n.localeCompare(b.n,"fr")).map(x=>{const n=users.filter(u=>u.school===x.n).length;return `<tr>
-      <td><a href="#" data-go="school" data-p="${x.id}">${esc(x.n)}</a></td><td><select data-act="schsec" data-n="${esc(x.n)}">${SECTORS.map(s=>`<option ${s===x.s?"selected":""}>${s}</option>`).join("")}</select></td><td>${n}</td>
+      <td><a href="#" data-go="school" data-p="${x.id}">${esc(x.n)}</a>
+        <details><summary class="small" style="cursor:pointer;color:var(--muted)">Renommer</summary><form class="renf row" data-id="${x.id}" style="margin-top:6px;flex-wrap:nowrap"><input name="n" required maxlength="120" value="${esc(x.n)}" style="min-width:0"><button type="submit">OK</button></form></details></td><td><select data-act="schsec" data-n="${esc(x.n)}">${SECTORS.map(s=>`<option ${s===x.s?"selected":""}>${s}</option>`).join("")}</select></td><td>${n}</td>
       <td>${n?"":`<button class="link" data-act="delsch" data-n="${esc(x.n)}">Supprimer</button>`}</td></tr>`;}).join("")}</table>
     <form id="schf" class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:1;min-width:200px"><label>Nouvel établissement</label><input name="n" required placeholder="Nouvel établissement (rentrée 2027)"></div>
       <div><label>Secteur</label><select name="s">${SECTORS.map(s=>`<option>${s}</option>`).join("")}</select></div><button type="submit">Ajouter</button></form></div>
@@ -622,6 +623,9 @@ function render(){
   const sch=document.getElementById("sel-school"), hint=document.getElementById("sec-hint");
   if(sch&&hint) sch.onchange=()=>{hint.innerHTML=sch.value?"Secteur"+NB+": "+secTag(sectorOf(sch.value)):"Le secteur sera déduit de l'établissement.";};
   document.querySelectorAll('select[data-act="role"]').forEach(s=>s.onchange=()=>{userById(Number(s.dataset.u)).role=s.value;toast("Rôle modifié");});
+  document.querySelectorAll("form.renf").forEach(f=>f.onsubmit=e=>{e.preventDefault();const x=schoolById(Number(f.dataset.id)),n=new FormData(f).get("n").trim();
+    if(!n||n===x.n){render();return;} if(schools.some(y=>y.n===n)){toast("Ce nom existe déjà");return;}
+    users.forEach(u=>{if(u.school===x.n)u.school=n;}); x.n=n; toast("Établissement renommé : "+n); render();});
   document.querySelectorAll('select[data-act="schsec"]').forEach(s=>s.onchange=()=>{schools.find(x=>x.n===s.dataset.n).s=s.value;toast("Établissement déplacé en "+s.value);render();});
 }
 const confirmState={};
