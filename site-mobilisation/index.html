@@ -118,7 +118,7 @@
 <body>
 <div class="demo">Démonstration&nbsp;: données fictives, rien n'est enregistré. <button id="mailbtn">E-mails envoyés (0)</button></div>
 <header><div class="bar">
-  <span class="brand">Actions militantes</span>
+  <span class="brand" id="brand">Actions militantes</span>
   <nav id="nav"></nav>
   <div class="who" id="who"></div>
 </div></header>
@@ -237,6 +237,12 @@ function transfer(a,to){const from=userById(a.by);a.by=to.id;a.name=to.name;a.ph
   avail.filter(x=>x.a===a.id&&![to.id,from&&from.id,me.id].includes(x.u)).map(x=>userById(x.u)).filter(u=>u&&u.notif.changes).forEach(u=>sendMail(u,"Nouveau responsable : "+a.title,"Le responsable de cette action est désormais "+to.name+".\n\n"+resume(a)));}
 
 // ---------- en-tête ----------
+let siteName="Actions militantes", siteLogo="";
+function applyBrand(){
+  const b=document.getElementById("brand"); b.innerHTML=(siteLogo?`<img src="${siteLogo}" alt="" style="height:36px;width:auto;max-width:120px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:10px">`:"")+esc(siteName);
+  document.title="Démo – "+siteName;
+  let l=document.querySelector('link[rel="icon"]'); if(siteLogo){if(!l){l=document.createElement("link");l.rel="icon";document.head.appendChild(l);}l.href=siteLogo;} else if(l) l.remove();
+}
 function header(){
   const nav=document.getElementById("nav"), who=document.getElementById("who");
   if(!isMember()) nav.innerHTML="";
@@ -490,6 +496,13 @@ V.admin=()=>{
     <button data-act="csv">Exporter le récapitulatif</button></div>`;
 };
 V.settings=()=>`<h1>Paramètres</h1><p class="muted">Réservé aux administrateurs.</p>
+  <div class="card"><h2>Nom du site et logo</h2>
+    <form id="namef" class="row" style="align-items:flex-end"><div style="flex:1;min-width:200px"><label>Nom du site</label><input name="n" maxlength="80" value="${esc(siteName)}"></div><button type="submit">Enregistrer</button></form>
+    <p class="hint">Affiché en haut de chaque page, dans l'onglet du navigateur et au bas des e-mails.</p>
+    <div class="row" style="align-items:flex-end;margin-top:12px">${siteLogo?`<img src="${siteLogo}" alt="Logo actuel" style="max-height:96px;max-width:200px;border:1px solid var(--line);border-radius:8px;padding:6px">`:""}
+      <div style="flex:1;min-width:200px"><label>${siteLogo?"Remplacer le logo":"Logo"}</label><input id="logofile" type="file" accept="image/png,image/jpeg,image/webp"></div></div>
+    <p class="hint">PNG, JPEG ou WebP, 2${NB}Mo au plus. Une image carrée rend mieux${NB}: le logo sert aussi d'icône dans l'onglet du navigateur. Dans la démo, il n'est pas enregistré.</p>
+    ${siteLogo?`<button class="link" data-act="dellogo">Retirer le logo</button>`:""}</div>
   <div class="card"><h2>Liens d'invitation</h2>
     <div class="alert"><strong>Attention.</strong> Toute personne qui ouvre un lien d'invitation obtient un compte validé, sans contrôle d'un responsable. Ne le partagez que dans le groupe WhatsApp du secteur, jamais sur un tract, une affiche ou un réseau social. S'il circule au-delà, réinitialisez-le&nbsp;: l'ancien lien cesse aussitôt de fonctionner, et les comptes déjà créés restent actifs (vous pouvez leur retirer l'accès dans Modération).</div>
     ${SECTORS.map(s=>{const iv=invites[s];return `<div style="margin:14px 0"><div class="row" style="margin-bottom:6px">${secTag(s)}<span class="small muted">Créé le ${esc(longDate(iv.since))} · ${iv.used}${NB}compte${iv.used>1?"s":""} créé${iv.used>1?"s":""} avec ce lien</span></div>
@@ -625,6 +638,10 @@ function render(){
     if(!id){toast("Référent retiré");render();return;}const to=userById(id);
     if(to.id!==me.id){sendMail(to,"Vous êtes référent : "+x.n,"Bonjour "+to.name+",\n\n"+me.name+" vous a nommé(e) référent de "+x.n+" ("+x.s+").\n\nVotre numéro de téléphone n'est pas affiché sur la fiche. Pour le rendre visible des membres validés, ouvrez la fiche et cochez la case prévue :\n"+SITE+"/index.php?p=etablissement&id="+x.id+"\n\nSi vous ne souhaitez pas être référent, vous pouvez vous retirer depuis cette même page.");toast(to.name+" est référent et en est prévenu(e) par e-mail");}
     else toast("Vous êtes maintenant référent de "+x.n);render();});
+  on("namef",v=>{siteName=(v.n||"").trim()||"Actions militantes";applyBrand();toast("Nom du site enregistré");render();});
+  const lf=document.getElementById("logofile"); if(lf) lf.onchange=()=>{const f=lf.files[0]; if(!f) return;
+    if(!["image/png","image/jpeg","image/webp"].includes(f.type)||f.size>2*1024*1024){toast("Choisissez une image PNG, JPEG ou WebP de 2 Mo au plus");return;}
+    const r=new FileReader(); r.onload=()=>{siteLogo=r.result;applyBrand();toast("Logo enregistré");render();}; r.readAsDataURL(f);};
   on("secf",v=>{const s=v.s.trim();if(s&&!SECTORS.includes(s)){SECTORS.push(s);invites[s]={token:token(),since:addDays(0),used:0};toast("Secteur ajouté, avec son lien d'invitation");}render();});
   on("schf",v=>{const n=v.n.trim();if(n&&!schools.some(x=>x.n===n)){schools.push({n,s:v.s,id:Math.max(0,...schools.map(x=>x.id))+1,ref:null,consent:false,depot:"",notes:"",upd:""});toast("Établissement ajouté");}render();});
   on("typef",v=>{const t=v.t.trim();if(t&&!TYPES.includes(t)){TYPES.push(t);toast("Type ajouté");}render();});
@@ -657,6 +674,7 @@ document.addEventListener("click",e=>{
     dlg.returnValue="";dlg.showModal();document.getElementById("dispotxt").focus();return;}
   if(act==="quitref"){if(!confirmClick(b,"quitref","Confirmer : ne plus être référent"))return;const x=schoolById(param);x.ref=null;x.consent=false;x.upd=addDays(0);toast("Vous n'êtes plus référent de "+x.n);render();return;}
   if(act==="copyrecap"){const t=recapText(recSector);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toast("Message copié"),()=>window.prompt("Copiez le texte :",t));else window.prompt("Copiez le texte :",t);return;}
+  if(act==="dellogo"){siteLogo="";applyBrand();toast("Logo retiré");render();return;}
   if(act==="edit"){go("edit",aid);return;}
   if(act==="dup"){prefill=Object.assign({},a,{date:[nextDay(a.date),addDays(1)].sort()[1],id:null});view="new";render();window.scrollTo&&window.scrollTo(0,0);return;}
   if(act==="cancel"){document.getElementById("cancelbox").innerHTML=`<form id="cancelf" class="card" style="margin-top:12px;background:var(--bg)"><label>Message aux inscrits (facultatif)</label><input name="msg" placeholder="Reporté à cause de la pluie…">
