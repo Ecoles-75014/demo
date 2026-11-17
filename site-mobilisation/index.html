@@ -273,12 +273,12 @@ V.otp=()=>{const o=otp;if(!o) return V.login();
   <p class="small muted">Le code est valable 10${NB}minutes (encore ${left}${NB}min). Pensez à regarder dans les courriers indésirables.</p>
   <form id="otpf">
     <input name="code" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••">
-    ${o.isNew?`<label>Votre prénom ou nom</label><input name="name" required autocomplete="given-name">`:""}
+    <label>Votre prénom ou nom <span class="muted small">(seulement à la première connexion)</span></label><input name="name" autocomplete="given-name">
     ${flash.err?`<p class="err">${esc(flash.err)}</p>`:""}
     <div class="row" style="margin-top:14px"><button class="primary" type="submit">Valider</button><span class="spacer"></span><button type="button" class="link" data-act="resend">Renvoyer un code</button><button type="button" class="link" data-go="login">Changer d'adresse</button></div>
   </form>
   <p class="democode">Démonstration&nbsp;: le code reçu par e-mail serait <strong>${o.code}</strong>.</p>
-  <p class="small muted">Après 5${NB}essais erronés, le code est annulé. Il faut alors en demander un nouveau.</p></div>`;};
+  <p class="small muted">Après 5${NB}essais erronés, le code est annulé. Il faut alors en demander un nouveau. Au-delà de 20${NB}essais erronés en 24${NB}heures, l'adresse est bloquée jusqu'au lendemain.</p></div>`;};
 V.pending=()=>`<div class="login card">
   <h1>Compte en attente de validation</h1>
   <p>Bonjour ${esc(me.name)}. Votre adresse (${esc(me.email)}) est confirmée.</p>
