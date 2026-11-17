@@ -204,7 +204,9 @@ const isAdmin=()=>me&&me.role==="admin";
 const go=(v,p)=>{if(v!==view)flash={};view=v;param=p;render();try{window.scrollTo(0,0);}catch(e){}};
 const toast=t=>{const e=document.getElementById("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2400);};
 const userById=id=>users.find(u=>u.id===id);
-const actionUrl=a=>SITE+"/action/"+a.id;
+// Identifiant public aléatoire (12 caractères hexadécimaux), comme sur le site réel.
+const refOf=a=>a.ref||(a.ref=Array.from({length:12},()=>"0123456789abcdef"[Math.floor(Math.random()*16)]).join(""));
+const actionUrl=a=>SITE+"/action/"+refOf(a);
 
 // ---------- e-mails simulés ----------
 function sendMail(u,subject,body){ if(!u) return; mails.unshift({to:u.email,name:u.name,subject,body,at:new Date()}); renderMailBtn(); }
@@ -304,7 +306,7 @@ function recapText(sec){
   const ML=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
   const longDate=iso=>{const x=d(iso);return JOURS[x.getDay()]+" "+x.getDate()+NB+ML[x.getMonth()];};
   const rows=actions.filter(a=>a.date>=from&&a.date<=to&&(!sec||a.sector===sec||!a.sector)).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||"")));
-  const TE=t=>{t=t.toLowerCase();for(const [k,e] of [["tract","📄"],["affich","📌"],["rassembl","✊"],["manif","✊"],["réunion","🗣️"],["concertation","🗣️"],["groupe de travail","🗣️"]]) if(t.includes(k)) return e; return "🔹";};
+  const TE=typeEmoji;
   const L=["📣 *Actions à venir – "+(sec?"secteur "+sec:"tous secteurs")+"*","Du "+longDate(from)+" au "+longDate(to)];
   if(!rows.length){L.push("","Aucune action prévue pour le moment. Proposez-en une : "+SITE+"/proposer");return L.join("\n");}
   let day=null;
@@ -360,7 +362,12 @@ V.list=()=>{
     <label class="small">Type&nbsp;: <select id="ft"><option value="">Tous</option>${TYPES.map(s=>`<option ${s===fType?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
   </div>${rows.length?rows.map(actionCard).join(""):`<p class="muted">Aucune action ne correspond à ces filtres.</p>`}`;
 };
-function shareText(a){return a.title+" – "+longDate(a.date)+", "+horaire(a)+"\nLieu : "+a.place+"\nInscrivez-vous : "+actionUrl(a);}
+const typeEmoji=t=>{t=t.toLowerCase();for(const [k,e] of [["tract","📄"],["affich","📌"],["rassembl","✊"],["manif","✊"],["réunion","🗣️"],["concertation","🗣️"],["groupe de travail","🗣️"]]) if(t.includes(k)) return e; return "🔹";};
+const ML_SHARE=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+function shareText(a,wa=true){const x=d(a.date),j=JOURS[x.getDay()],n=count(a),need=a.needed||0;
+  const L=[typeEmoji(a.type)+" "+(wa?"*"+a.title+"*":a.title),"📅 "+j.charAt(0).toUpperCase()+j.slice(1)+" "+x.getDate()+NB+ML_SHARE[x.getMonth()]+", "+horaire(a),"📍 "+a.place];
+  if(need>n) L.push("🙋 Il manque "+(need-n)+NB+"personne"+(need-n>1?"s":"")+" ("+n+" sur "+need+")");
+  L.push("👉 Inscrivez-vous : "+actionUrl(a)); return L.join("\n");}
 function icsOf(a){
   const pad=n=>String(n).padStart(2,"0"), ymd=a.date.replace(/-/g,""), t=s=>s.replace(":","")+"00";
   let dt;
@@ -368,7 +375,7 @@ function icsOf(a){
     dt="DTSTART;TZID=Europe/Paris:"+ymd+"T"+t(a.start)+"\r\nDTEND;TZID=Europe/Paris:"+ymd+"T"+t(end);}
   else dt="DTSTART;VALUE=DATE:"+ymd+"\r\nDTEND;VALUE=DATE:"+nextDay(a.date).replace(/-/g,"");
   const e=s=>String(s||"").replace(/\\/g,"\\\\").replace(/([,;])/g,"\\$1").replace(/\n/g,"\\n");
-  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Actions militantes//Demo//FR","BEGIN:VEVENT","UID:action-"+a.id+"@actions.exemple.fr",
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Actions militantes//Demo//FR","BEGIN:VEVENT","UID:action-"+refOf(a)+"@actions.exemple.fr",
     "DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z",dt,"SUMMARY:"+e(a.title),"LOCATION:"+e(a.place),
     "DESCRIPTION:"+e((a.desc?a.desc+"\n":"")+actionUrl(a)),"URL:"+actionUrl(a),"END:VEVENT","END:VCALENDAR"].join("\r\n");
 }
@@ -387,7 +394,7 @@ V.detail=()=>{
     <p>${esc(a.name)}${a.consent&&a.phone?` – <a href="tel:${esc(a.phone.replace(/\s/g,""))}">${esc(a.phone)}</a>`:` <span class="muted small">(numéro non affiché, contacter via le groupe WhatsApp du secteur)</span>`}</p>
     ${open?`<div class="share">
       <a class="btn" href="https://wa.me/?text=${encodeURIComponent(shareText(a))}" target="_blank" rel="noopener">Partager sur WhatsApp</a>
-      <a class="btn" href="mailto:?subject=${encodeURIComponent(a.title+" – "+longDate(a.date))}&body=${encodeURIComponent(shareText(a))}">Partager par e-mail</a>
+      <a class="btn" href="mailto:?subject=${encodeURIComponent(typeEmoji(a.type)+" "+a.title+" – "+longDate(a.date))}&body=${encodeURIComponent(shareText(a,false))}">Partager par e-mail</a>
       <button data-act="ics" data-a="${a.id}">Ajouter à mon agenda (.ics)</button>
       <button data-act="copy" data-a="${a.id}">Copier le message</button></div>
     <p class="small muted">Le message partagé ne contient jamais de numéro de téléphone. Le lien demande de se connecter.</p>
@@ -469,9 +476,10 @@ V.admin=()=>{
     ${pend.length?`<table><tr><th>Nom</th><th>Adresse</th><th>Établissement</th><th></th></tr>${pend.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${u.school?esc(u.school)+" "+secTag(sectorOf(u.school)):`<span class="muted small">Non précisée</span>`}</td><td class="row"><button class="ok" data-act="approve" data-u="${u.id}">Valider</button><button class="link" data-act="refuse" data-u="${u.id}">Refuser</button></td></tr>`).join("")}</table>`:`<p class="muted">Aucun compte en attente.</p>`}
     ${mySec&&!isAdmin()?`<p class="small muted">Pour éviter d'avoir à valider chaque compte, partagez le lien d'invitation du secteur ${esc(mySec)} dans son groupe WhatsApp. Demandez-le à un administrateur.</p>`:""}</div>
   <div class="card"><h2>Membres (${others.length})</h2><table><tr><th>Nom</th><th>Établissement</th><th>Arrivé par</th><th>Rôle</th></tr>
-    ${others.map(u=>`<tr><td>${esc(u.name)}<div class="small muted">${esc(u.email)}</div></td><td>${esc(u.school)} ${secTag(sectorOf(u.school))}</td><td class="small">${u.inviteSector?"Lien "+esc(u.inviteSector):"Validation"}</td><td>
+    ${others.map(u=>`<tr><td>${esc(u.name)}<div class="small muted">${esc(u.email)}</div></td><td>${isAdmin()?`<select data-act="usersch" data-u="${u.id}"><option value="">Non précisé</option>${SECTORS.map(s=>`<optgroup label="Secteur ${esc(s)}">${schools.filter(x=>x.s===s).sort((a,b)=>a.n.localeCompare(b.n,"fr")).map(x=>`<option ${x.n===u.school?"selected":""}>${esc(x.n)}</option>`).join("")}</optgroup>`).join("")}</select> `:esc(u.school)+" "}${secTag(sectorOf(u.school))}</td><td class="small">${u.inviteSector?"Lien "+esc(u.inviteSector):"Validation"}</td><td>
       <select data-act="role" data-u="${u.id}" ${u.id===me.id||(u.role==="admin"&&!isAdmin())?"disabled":""}>${[["member","Membre"],["moderator","Modérateur"],["admin","Administrateur"]].filter(([k])=>k!=="admin"||isAdmin()||u.role==="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${l}</option>`).join("")}</select>
       ${u.id!==me.id&&u.role!=="admin"?`<button class="link small" data-act="block" data-u="${u.id}">Retirer l'accès</button>`:""}</td></tr>`).join("")}</table>
+    ${isAdmin()?`<p class="small muted">Le secteur d'une personne est celui de son établissement${NB}: pour la changer de secteur, choisissez un établissement de l'autre secteur.</p>`:""}
     <p class="small muted">«${NB}Retirer l'accès${NB}» remet le compte en attente, par exemple pour une personne arrivée par un lien qui aurait fuité.</p></div>
   <div class="card"><h2>Message WhatsApp</h2><p class="small muted">Les actions des 7 prochains jours, mises en forme pour un groupe WhatsApp, avec les besoins en personnes et les liens d'inscription. Sans nom ni numéro de téléphone.</p>
     <div class="filters"><label class="small">Secteur&nbsp;: <select id="recsec"><option value="">Tous</option>${SECTORS.map(s=>`<option ${s===recSector?"selected":""}>${s}</option>`).join("")}</select></label></div>
@@ -626,6 +634,7 @@ function render(){
   document.querySelectorAll("form.renf").forEach(f=>f.onsubmit=e=>{e.preventDefault();const x=schoolById(Number(f.dataset.id)),n=new FormData(f).get("n").trim();
     if(!n||n===x.n){render();return;} if(schools.some(y=>y.n===n)){toast("Ce nom existe déjà");return;}
     users.forEach(u=>{if(u.school===x.n)u.school=n;}); x.n=n; toast("Établissement renommé : "+n); render();});
+  document.querySelectorAll('select[data-act="usersch"]').forEach(s=>s.onchange=()=>{const u=userById(Number(s.dataset.u));u.school=s.value;toast(u.name+(s.value?" est rattaché(e) à "+s.value+" (secteur "+sectorOf(s.value)+")":" n'est plus rattaché(e) à un établissement"));render();});
   document.querySelectorAll('select[data-act="schsec"]').forEach(s=>s.onchange=()=>{schools.find(x=>x.n===s.dataset.n).s=s.value;toast("Établissement déplacé en "+s.value);render();});
 }
 const confirmState={};
@@ -654,7 +663,7 @@ document.addEventListener("click",e=>{
       <p class="hint">${count(a)}${NB}personne(s) inscrite(s) recevront un e-mail.</p><div class="row" style="margin-top:10px"><button class="primary" type="submit">Confirmer l'annulation</button></div></form>`;
     document.getElementById("cancelf").onsubmit=ev=>{ev.preventDefault();a.status="cancelled";a.cancelMsg=new FormData(ev.target).get("msg").trim();const n=notifyChange(a,"cancel");toast("Action annulée"+(n?" – "+n+" inscrit(s) prévenu(s)":""));render();};return;}
   if(act==="reopen"){a.status="open";a.cancelMsg="";toast("Action rétablie");render();return;}
-  if(act==="ics"){document.getElementById("icsbox").innerHTML=`<p class="democode">Démonstration&nbsp;: sur le site réel, ce bouton télécharge le fichier «${NB}action-${a.id}.ics${NB}», qui s'ouvre dans l'agenda du téléphone ou de l'ordinateur. Contenu&nbsp;:</p><pre class="ics">${esc(icsOf(a))}</pre>`;return;}
+  if(act==="ics"){document.getElementById("icsbox").innerHTML=`<p class="democode">Démonstration&nbsp;: sur le site réel, ce bouton télécharge le fichier «${NB}action-${refOf(a)}.ics${NB}», qui s'ouvre dans l'agenda du téléphone ou de l'ordinateur. Contenu&nbsp;:</p><pre class="ics">${esc(icsOf(a))}</pre>`;return;}
   if(act==="copy"){try{navigator.clipboard.writeText(shareText(a)).then(()=>toast("Message copié"),()=>toast("Copie impossible ici"));}catch(err){toast("Copie impossible ici");}return;}
   if(act==="approve"){const u=userById(Number(b.dataset.u));u.role="member";sendMail(u,"Votre compte est validé","Bonjour "+u.name+", votre compte est validé. Vous pouvez voir les actions et vous inscrire :\n"+SITE);toast("Compte validé – "+u.name+" est prévenu(e)");render();return;}
   if(act==="refuse"){users=users.filter(u=>u.id!==Number(b.dataset.u));toast("Compte refusé");render();return;}
