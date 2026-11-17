@@ -433,7 +433,7 @@ function form(a,isNew){
   const opt=(list,v)=>list.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("");
   return `<form id="f" class="card" data-id="${isNew?"":(a.id||"")}">
     <div class="grid2">
-      <div><label>Votre nom ou prénom</label><input name="name" required value="${esc(a.name)}"></div>
+      <div><label>Responsable</label><p style="margin:6px 0"><strong>${esc(a.name||me.name)}</strong> <span class="small muted">(prénom et initiale du nom, d'après le compte)</span></p></div>
       <div><label>Téléphone</label><input name="phone" type="tel" value="${esc(a.phone)}" placeholder="06 12 34 56 78"></div>
     </div>
     <label class="check"><input type="checkbox" name="consent" ${a.consent?"checked":""}> J'accepte que mon numéro soit visible par les membres validés du site, pour que les personnes intéressées par l'action puissent me joindre facilement.</label>
@@ -618,7 +618,7 @@ function render(){
     if(pendingInvite&&u.role==="pending"){u.role="member";u.inviteSector=pendingInvite;invites[pendingInvite].used++;pendingInvite=null;go("welcome");return;}
     pendingInvite=null;toast("Connecté");go(u.role==="pending"?"pending":"list");});
   on("f",(v,f)=>{
-    const rec={name:v.name,phone:v.phone,consent:!!v.consent,type:v.type,sector:v.sector,title:v.title,place:v.place,date:v.date,start:v.start,end:v.end,needed:v.needed?Number(v.needed):null,desc:v.desc};
+    const rec={name:f.dataset.id?(userById(actions.find(x=>x.id===Number(f.dataset.id)).by)||me).name:me.name,phone:v.phone,consent:!!v.consent,type:v.type,sector:v.sector,title:v.title,place:v.place,date:v.date,start:v.start,end:v.end,needed:v.needed?Number(v.needed):null,desc:v.desc};
     if(f.dataset.id){const a=actions.find(x=>x.id===Number(f.dataset.id));Object.assign(a,rec);const n=notifyChange(a,"edit");toast("Action modifiée"+(n?" – "+n+" inscrit(s) prévenu(s)":""));go("detail",a.id);return;}
     const rep=Number(v.repeat||0);let dates=[rec.date];
     if(rep===1) dates.push(nextDay(rec.date));
@@ -626,7 +626,7 @@ function render(){
     if(rep===7){const x=d(rec.date);x.setDate(x.getDate()+7);dates.push(isoOf(x));}
     let first=null;dates.forEach(dt=>{const id=Math.max(0,...actions.map(a=>a.id))+1;actions.push(Object.assign({id,by:me.id,status:"open"},rec,{date:dt}));if(!first)first=id;});
     prefill=null;toast(dates.length>1?dates.length+" actions publiées":"Action publiée");go("detail",first);});
-  on("acc",v=>{if(v.first!==undefined){const f=(v.first||"").trim(),l=(v.last||"").trim();if(!f||!l){toast("Indiquez votre prénom et votre nom");return;}me.first=f;me.last=l;me.name=pubName(f,l);}if(v.phone!==undefined)me.phone=v.phone;me.school=v.school;
+  on("acc",v=>{if(v.first!==undefined){const f=(v.first||"").trim(),l=(v.last||"").trim();if(!f||!l){toast("Indiquez votre prénom et votre nom");return;}me.first=f;me.last=l;me.name=pubName(f,l);actions.forEach(a=>{if(a.by===me.id)a.name=me.name;});}if(v.phone!==undefined)me.phone=v.phone;me.school=v.school;
     if("n_inscrits" in v||document.querySelector('[name="n_inscrits"]')) me.notif={inscrits:!!v.n_inscrits,changes:!!v.n_changes,rappel:!!v.n_rappel};
     if(view==="pending"&&v.school){const mods=users.filter(u=>u.role==="moderator"&&sectorOf(u.school)===sectorOf(v.school));mods.forEach(m=>sendMail(m,"Nouveau compte à valider : "+me.name,me.name+" ("+me.email+") attend la validation de son compte pour l'établissement "+v.school+".\n"+SITE+"/moderation"));}
     toast("Enregistré");go(view==="welcome"?"list":view);});
@@ -653,7 +653,7 @@ function render(){
   if(sch&&hint) sch.onchange=()=>{hint.innerHTML=sch.value?"Secteur"+NB+": "+secTag(sectorOf(sch.value)):"Le secteur sera déduit de l'établissement.";};
   document.querySelectorAll('select[data-act="role"]').forEach(s=>s.onchange=()=>{userById(Number(s.dataset.u)).role=s.value;toast("Rôle modifié");});
   document.querySelectorAll("form.namefix").forEach(f=>f.onsubmit=e=>{e.preventDefault();const u=userById(Number(f.dataset.u)),fd=new FormData(f),fi=fd.get("first").trim(),la=fd.get("last").trim();if(!fi||!la)return;
-    u.first=fi;u.last=la;u.name=pubName(fi,la);toast("Nom corrigé : "+fi+" "+la+" (affiché « "+u.name+" » aux membres)");render();});
+    u.first=fi;u.last=la;u.name=pubName(fi,la);actions.forEach(a=>{if(a.by===u.id)a.name=u.name;});toast("Nom corrigé : "+fi+" "+la+" (affiché « "+u.name+" » aux membres)");render();});
   document.querySelectorAll("form.renf").forEach(f=>f.onsubmit=e=>{e.preventDefault();const x=schoolById(Number(f.dataset.id)),n=new FormData(f).get("n").trim();
     if(!n||n===x.n){render();return;} if(schools.some(y=>y.n===n)){toast("Ce nom existe déjà");return;}
     users.forEach(u=>{if(u.school===x.n)u.school=n;}); x.n=n; toast("Établissement renommé : "+n); render();});
