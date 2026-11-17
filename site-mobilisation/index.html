@@ -241,7 +241,7 @@ function transfer(a,to){const from=userById(a.by);a.by=to.id;a.name=to.name;a.ph
 // ---------- en-tête ----------
 let siteName="Actions militantes", siteLogo="";
 function applyBrand(){
-  const b=document.getElementById("brand"); b.innerHTML=(siteLogo?`<img src="${siteLogo}" alt="" style="height:36px;width:auto;max-width:120px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:10px">`:"")+esc(siteName);
+  const b=document.getElementById("brand"); b.innerHTML=(siteLogo?`<img src="${siteLogo}" alt="" style="height:72px;width:auto;max-width:240px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:10px">`:"")+esc(siteName);
   document.title="Démo – "+siteName;
   let l=document.querySelector('link[rel="icon"]'); if(siteLogo){if(!l){l=document.createElement("link");l.rel="icon";document.head.appendChild(l);}l.href=siteLogo;} else if(l) l.remove();
 }
