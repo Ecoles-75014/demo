@@ -626,7 +626,8 @@ function render(){
   if(view==="admin" && !isMod()) view="list";
   if(view==="settings" && !isAdmin()) view="list";
   if(view!=="new") prefill=null;
-  document.getElementById("main").innerHTML=(V[view]||V.list)();
+  const noSchool=isMember()&&!me.school&&view!=="account"?`<div class="alert"><strong>Votre établissement de rattachement n'est pas précisé.</strong> Sans établissement, vous n'êtes rattaché(e) à aucun secteur, et les responsables ne savent pas à quelles actions vous associer. <a href="#" data-go="account">Choisir mon établissement</a></div>`:"";
+  document.getElementById("main").innerHTML=noSchool+(V[view]||V.list)();
   stackTables(document.getElementById("main"));
   header();
   const rs=document.getElementById("recsec"); if(rs) rs.onchange=()=>{recSector=rs.value;render();};
