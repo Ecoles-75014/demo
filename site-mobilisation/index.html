@@ -374,7 +374,7 @@ V.list=()=>{
 const typeEmoji=t=>{t=t.toLowerCase();for(const [k,e] of [["tract","📄"],["affich","📌"],["rassembl","✊"],["manif","✊"],["réunion","🗣️"],["concertation","🗣️"],["groupe de travail","🗣️"]]) if(t.includes(k)) return e; return "🔹";};
 const ML_SHARE=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 function shareText(a,wa=true){const x=d(a.date),j=JOURS[x.getDay()],n=count(a),need=a.needed||0;
-  const L=[typeEmoji(a.type)+" "+(wa?"*"+a.title+"*":a.title),"📅 "+j.charAt(0).toUpperCase()+j.slice(1)+" "+x.getDate()+NB+ML_SHARE[x.getMonth()]+", "+horaire(a),"📍 "+a.place];
+  const L=[typeEmoji(a.type)+" "+a.type.toUpperCase(),(wa?"*"+a.title+"*":a.title),"📅 "+j.charAt(0).toUpperCase()+j.slice(1)+" "+x.getDate()+NB+ML_SHARE[x.getMonth()]+", "+horaire(a),"📍 "+a.place];
   if(need>n) L.push("🙋 Il manque "+(need-n)+NB+"personne"+(need-n>1?"s":"")+" ("+n+" sur "+need+")");
   L.push("👉 Inscrivez-vous : "+actionUrl(a)); return L.join("\n");}
 function icsOf(a){
@@ -403,7 +403,7 @@ V.detail=()=>{
     <p>${esc(a.name)}${a.consent&&a.phone?` – <a href="tel:${esc(a.phone.replace(/\s/g,""))}">${esc(a.phone)}</a>`:` <span class="muted small">(numéro non affiché, contacter via le groupe WhatsApp du secteur)</span>`}</p>
     ${open?`<div class="share">
       <a class="btn" href="https://wa.me/?text=${encodeURIComponent(shareText(a))}" target="_blank" rel="noopener">Partager sur WhatsApp</a>
-      <a class="btn" href="mailto:?subject=${encodeURIComponent(typeEmoji(a.type)+" "+a.title+" – "+longDate(a.date))}&body=${encodeURIComponent(shareText(a,false))}">Partager par e-mail</a>
+      <a class="btn" href="mailto:?subject=${encodeURIComponent(typeEmoji(a.type)+" "+(a.title.toLowerCase().startsWith(a.type.toLowerCase())?"":a.type+" : ")+a.title+" – "+longDate(a.date))}&body=${encodeURIComponent(shareText(a,false))}">Partager par e-mail</a>
       <button data-act="ics" data-a="${a.id}">Ajouter à mon agenda (.ics)</button>
       <button data-act="copy" data-a="${a.id}">Copier le message</button></div>
     <p class="small muted">Le message partagé ne contient jamais de numéro de téléphone. Le lien demande de se connecter.</p>
